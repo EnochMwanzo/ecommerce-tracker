@@ -16,7 +16,7 @@ import (
 var db *sql.DB
 
 type Customer struct {
-	ID int `json:"ID"`
+	Id int `json:"ID"`
 	Name string `json:"Name"`
 	NewName string `json:"newName"`
 	ItemsPerPage int `json: "itemsPerPage"`
@@ -24,7 +24,7 @@ type Customer struct {
 }
 
 type Product struct {
-	ID int `json:"ID"`
+	Id int `json:"ID"`
 	Name string `json:"Name"`
 	Description string `json:"Description"`
 	NewName string `json:"newName"`
@@ -34,9 +34,9 @@ type Product struct {
 }
 
 type Order struct {
-	ID int `json:"id"`
-	CustomerID int `json:"CustomerId"`
-	ProductID int `json:"ProductId"`
+	Id int `json:"id"`
+	CustomerId int `json:"CustomerId"`
+	ProductId int `json:"ProductId"`
 	Quantity int `json:"quantity"`
 	Total int `json:"total"`
 	Progress string `json:"progress"`
@@ -61,6 +61,14 @@ type Search struct {
 	SearchBy string `json:"searchBy"`
 	ItemsPerPage int `json: "itemsPerPage"`
 	PageNumber int `json: "PageNumber"`
+}
+
+type Review struct {
+	OrderId int `json:"ID"`
+	Name string `json:"Name"`
+	NewName string `json:"newName"`
+	ItemsPerPage int `json: "itemsPerPage"`
+	PageNumber int `json: "pageNumber"`
 }
 
 func index(w http.ResponseWriter, r *http.Request) {
