@@ -33,18 +33,34 @@ type Product struct {
 	PageNumber int `json: "PageNumber"`
 }
 
+type Order struct {
+	ID int `json:"id"`
+	CustomerID int `json:"CustomerId"`
+	ProductID int `json:"ProductId"`
+	Quantity int `json:"quantity"`
+	Total int `json:"total"`
+	Progress string `json:"progress"`
+	ItemsPerPage int `json: "itemsPerPage"`
+	PageNumber int `json: "PageNumber"`
+}
+
+type employees struct {
+	ID int `json:"id"`
+	EmployeeName string `json:"employeeName"`
+	JobTitle string `json:"jobTitle"`
+	Department string `json:"department"`
+	DaysSinceStarting int `json:"daysSinceStarting"`
+	Phone string `json:"phone"`
+	Email string `json:"email"`
+	ItemsPerPage int `json: "itemsPerPage"`
+	PageNumber int `json: "PageNumber"`
+}
+
 type Search struct {
 	Query string `json:"query"`
 	SearchBy string `json:"searchBy"`
 	ItemsPerPage int `json: "itemsPerPage"`
 	PageNumber int `json: "PageNumber"`
-}
-func loadPage(w http.ResponseWriter, r *http.Request, filename string, data any) {
-	t := template.Must(template.ParseFiles("templates/base.html", "templates/"+filename))
-
-	t.Execute(w, map[string]interface{}{
-		"data": data,
-	})
 }
 
 func index(w http.ResponseWriter, r *http.Request) {
@@ -312,6 +328,21 @@ func searchProducts(w http.ResponseWriter, r *http.Request){
 	}
 }
 
+func employees (w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+		case "GET":
+			t := template.Must(template.ParseFiles("templates/base.html", "templates/employees.html"))
+	}
+}
+
+func orders (w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+		case "GET":
+			t := template.Must(template.ParseFiles("templates/base.html", "templates/orders.html"))
+	}
+}
+
+
 func main() {
 	config, err := ini.Load("config.ini")
 	if err != nil {
@@ -338,11 +369,16 @@ func main() {
 	    fmt.Println("Connected to MySQL")
 
 	http.HandleFunc("/", index)
+
 	http.HandleFunc("/customers", customers)
 	http.HandleFunc("/customers/search", searchCustomers)
 	http.HandleFunc("/customers/edit", editCustomers)
+
 	http.HandleFunc("/products", products)
 	http.HandleFunc("/products/search", products)
 	http.HandleFunc("/products/edit", products)
+
+	http.HandleFunc("/orders", orders)
+	http.HandleFunc("/employees", employees)
 	log.Fatal(http.ListenAndServe("localhost:8080", nil))
 }
