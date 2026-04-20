@@ -9,7 +9,7 @@
 <th>Company Email</th>
 {{end}} {{define "tableData"}} {{range .data}}
 <tr id="row-{{.ID}}">
-    <td data-bind:id>{{.ID}}</td>
+    <td data-bind:id>{{.Id}}</td>
     <td data-bind:employee-name>{{.EmployeeName}}</td>
     <td data-bind:job-title>{{.JobTitle}}</td>
     <td data-bind:department>{{.Department}}</td>
@@ -18,13 +18,13 @@
     <td data-bind:company-email>{{.CompanyEmail}}</td>
     <td>
         <button
-            data-on:click="confirm('Are you sure?') && @delete('/employees?id={{.ID}}')"
+            data-on:click="confirm('Are you sure?') && @delete('/employees?id={{.Id}}')"
         >
             Delete
         </button>
     </td>
     <td>
-        <button data-on:click="@patch('/employees?id={{.ID}}')">Edit</button>
+        <button data-on:click="@patch('/employees?id={{.Id}}')">Edit</button>
     </td>
 </tr>
 {{end}} {{end}} {{define "addResourceInputs"}}

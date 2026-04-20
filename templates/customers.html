@@ -69,18 +69,18 @@
                 </thead>
                 <tbody id="current-table">
                     {{range .data}}
-                    <tr id="row-{{.ID}}">
-                        <td data-signals="{ID: {{.ID}} }">{{.ID}}</td>
+                    <tr id="row-{{.Id}}">
+                        <td data-signals="{Id: {{.Id}} }">{{.Id}}</td>
                         <td data-signals="{Name: '{{.Name}}'}">{{.Name}}</td>
                         <td>
                             <button
-                                data-on:click="confirm('Are you sure?') && @delete('/customers?id={{.ID}}')"
+                                data-on:click="confirm('Are you sure?') && @delete('/customers?id={{.Id}}')"
                             >
                                 Delete
                             </button>
                         </td>
                         <td>
-                            <button data-on:click="@get('/customers/edit?id={{.ID}}&name={{.Name}}')">
+                            <button data-on:click="@get('/customers/edit?id={{.Id}}&name={{.Name}}')">
                                 Edit
                             </button>
                         </td>

@@ -4,20 +4,20 @@
 <th>product name</th>
 <th>description</th>
 {{end}} {{define "tableData"}} {{range .data}}
-<tr id="row-{{.ID}}">
-    <td data-bind:product-id>{{.ID}}</td>
+<tr id="row-{{.Id}}">
+    <td data-bind:product-id>{{.Id}}</td>
     <td data-bind:product-name>{{.Name}}</td>
     <td data-bind:product-description>{{.Description}}</td>
     <td>
         <button
-            data-on:click="confirm('Are you sure?') && @delete('/products?id={{.ID}}')"
+            data-on:click="confirm('Are you sure?') && @delete('/products?id={{.Id}}')"
         >
             Delete
         </button>
     </td>
     <td>
         <button
-            data-on:click="@get('/products/edit?product-id={{.ID}}&name={{.Name}')"
+            data-on:click="@get('/products/edit?product-id={{.Id}}&name={{.Name}')"
         >
             Edit
         </button>
