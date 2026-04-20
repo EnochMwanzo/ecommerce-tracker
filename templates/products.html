@@ -1,0 +1,36 @@
+{{define "title"}}Products{{end}} {{define "resource"}}product{{end}} {{define
+"tableHeaders"}}
+<th>id</th>
+<th>product name</th>
+<th>description</th>
+{{end}} {{define "tableData"}} {{range .data}}
+<tr id="row-{{.ID}}">
+    <td data-bind:product-id>{{.ID}}</td>
+    <td data-bind:product-name>{{.Name}}</td>
+    <td data-bind:product-description>{{.Description}}</td>
+    <td>
+        <button
+            data-on:click="confirm('Are you sure?') && @delete('/products?id={{.ID}}')"
+        >
+            Delete
+        </button>
+    </td>
+    <td>
+        <button
+            data-on:click="@get('/products/edit?product-id={{.ID}}&name={{.Name}')"
+        >
+            Edit
+        </button>
+    </td>
+</tr>
+{{end}} {{end}} {{define "addResourceInputs"}}
+<label for="product-name">product name</label>
+<input id="product-name" type="text" name="product-name" required />
+<label for="product-description">product description</label>
+<input
+    id="product-description"
+    type="text"
+    name="product-description"
+    required
+/>
+{{end}}

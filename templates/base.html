@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>
+            {{ block "title" . }}
+            {{end}}
+        </title>
+        <script
+            type="module"
+            src="https://cdn.jsdelivr.net/gh/starfederation/datastar@1.0.0-RC.8/bundles/datastar.js"
+        ></script>
+        <style>
+        body {
+            background-color: lightblue;
+            margin: 0 auto;
+            /*width: 100%;*/
+            text-align: center;
+            font-family: sans-serif
+        }
+
+        table {
+            border: 1px solid black;
+            text-align: center;
+            margin: 0 auto;
+        }
+        td {
+            border: 1px solid black;
+            padding: 1em;
+        }
+
+        .navbar-item {
+            display: inline-flex;
+        }
+        </style>
+    </head>
+    <div>
+    <body>
+        <header>
+        <nav>
+            <ul>
+                <li class="navbar-item"><a href="/customers">Customers</a></li>
+                <li class="navbar-item"><a href="/products">Products</a></li>
+                <li class="navbar-item"><a href="/employees">Employees</a></li>
+                <!--<li class="navbar-item"><a href="#">Support Tickets</a></li>-->
+                <li class="navbar-item"><a href="/orders">Orders</a></li>
+                <!--<li class="navbar-item"><a href="#">Reviews</a></li>
+                <li class="navbar-item"><a href="#">Creators</a></li>-->
+            </ul>
+        </nav>
+        </header>
+        <div class="wrapper">
+        <main>
+        <h1>{{block "resource" . }}{{end}}s</h1>
+            <input
+                id="search"
+                type="text"
+                placeholder="Search..."
+                data-bind:search
+                data-on:input__debounce.200ms="@get('/search')"
+            />
+            <div style="line-height:1.5em;">&#8202;</div>
+            <table>
+                <thead>
+                    <tr>
+                        {{block "tableHeaders" . }}{{end}}
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                    {{block "tableData" . }}{{end}}
+                    </tr>
+                </tbody>
+            </table>
+            <h2>Add a {{block "resource" . }}{{end}}</h2>
+            <form method="POST" action="/{{block "resource" .}}{{end}}s">
+                {{block "addResourceInputs" . }}{{end}}
+                <input type="submit" value="Submit" />
+            </form>
+        </main>
+        <footer>
+        </footer>
+        <div>
+    </body>
+</html>
