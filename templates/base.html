@@ -26,12 +26,31 @@
             margin: 0 auto;
         }
         td {
-            border: 1px solid black;
+            border: 1px solid;
             padding: 1em;
         }
 
-        .navbar-item {
+        nav {
             display: inline-flex;
+            background: turquoise;
+        }
+
+        a:hover {
+            background: darkblue;
+            color: white;
+            text-decoration: none
+        }
+
+        @media (prefers-color-scheme: dark) {
+            body {
+                background: darkslategrey;
+                color: lightblue;
+            }
+            a:hover {
+                background: lightblue;
+                color: black;
+                text-decoration: none
+            }
         }
         </style>
     </head>
@@ -45,7 +64,7 @@
                 <li class="navbar-item"><a href="/employees">Employees</a></li>
                 <!--<li class="navbar-item"><a href="#">Support Tickets</a></li>-->
                 <li class="navbar-item"><a href="/orders">Orders</a></li>
-                <!--<li class="navbar-item"><a href="#">Reviews</a></li>
+                <li class="navbar-item"><a href="#">Reviews</a></li>
                 <li class="navbar-item"><a href="#">Creators</a></li>-->
             </ul>
         </nav>
@@ -58,7 +77,7 @@
                 type="text"
                 placeholder="Search..."
                 data-bind:search
-                data-on:input__debounce.200ms="@get('/search')"
+                data-on:input__debounce.200ms="@get('/{{block "resource" .}}s/search')"
             />
             <div style="line-height:1.5em;">&#8202;</div>
             <table>

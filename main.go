@@ -19,6 +19,7 @@ type Customer struct {
 	Id int `json:"ID"`
 	Name string `json:"Name"`
 	NewName string `json:"newName"`
+
 	ItemsPerPage int `json: "itemsPerPage"`
 	PageNumber int `json: "pageNumber"`
 }
@@ -27,31 +28,47 @@ type Product struct {
 	Id int `json:"ID"`
 	Name string `json:"Name"`
 	Description string `json:"Description"`
+
 	NewName string `json:"newName"`
 	NewDescription string `json:"newDescription"`
+
 	ItemsPerPage int `json: "itemsPerPage"`
 	PageNumber int `json: "PageNumber"`
 }
 
 type Order struct {
-	Id int `json:"id"`
+	OrderId int `json:"orderId"`
 	CustomerId int `json:"CustomerId"`
 	ProductId int `json:"ProductId"`
 	Quantity int `json:"quantity"`
 	Total int `json:"total"`
 	Progress string `json:"progress"`
+
+	NewCustomerId int `json:"newCustomerId"`
+	NewProductId int `json:"newProductId"`
+	NewQuantity int `json:"newQuantity"`
+	NewProgress string `json:"progress"`
+
 	ItemsPerPage int `json: "itemsPerPage"`
 	PageNumber int `json: "PageNumber"`
 }
 
-type employees struct {
+type Employee struct {
 	ID int `json:"id"`
 	EmployeeName string `json:"employeeName"`
 	JobTitle string `json:"jobTitle"`
 	Department string `json:"department"`
-	DaysSinceStarting int `json:"daysSinceStarting"`
+	StartDate string `json:"startDate"`
 	Phone string `json:"phone"`
 	Email string `json:"email"`
+
+	NewEmployeeName string `json:"newEmployeeName"`
+	NewJobTitle string `json:"newJobTitle"`
+	NewDepartment string `json:"newDepartment"`
+	NewStartDate string `json:"newStartDate"`
+	NewPhone string `json:"newPhone"`
+	NewEmail string `json:"newEmail"`
+
 	ItemsPerPage int `json: "itemsPerPage"`
 	PageNumber int `json: "PageNumber"`
 }
@@ -64,11 +81,15 @@ type Search struct {
 }
 
 type Review struct {
-	OrderId int `json:"ID"`
-	Name string `json:"Name"`
-	NewName string `json:"newName"`
+	OrderId int `json:"id"`
+	Rating int `json:"rating"`
+	Review string `json:"review"`
 	ItemsPerPage int `json: "itemsPerPage"`
 	PageNumber int `json: "pageNumber"`
+
+	NewOrderId int `json:"newId"`
+	NewRating int `json:"newRating"`
+	NewReview string `json:"newReview"`
 }
 
 func index(w http.ResponseWriter, r *http.Request) {
@@ -94,7 +115,7 @@ func customers(w http.ResponseWriter, r *http.Request) {
 			var customer_data []Customer
 			for rows.Next() {
 		      	var customer_field Customer
-		       	if err := rows.Scan(&customer_field.ID, &customer_field.Name); err != nil {
+		       	if err := rows.Scan(&customer_field.Id, &customer_field.Name); err != nil {
 		        	fmt.Errorf("error: ", err)
 		        }
 		        customer_data = append(customer_data, customer_field)
@@ -183,7 +204,7 @@ func searchCustomers(w http.ResponseWriter, r *http.Request){
 		var results []Customer
 		for rows.Next() {
 	      	var customer_field Customer
-	       	if err := rows.Scan(&customer_field.ID, &customer_field.Name); err != nil {
+	       	if err := rows.Scan(&customer_field.Id, &customer_field.Name); err != nil {
 	        	fmt.Errorf("search error: ", err.Error())
 	         	return
 	        }
@@ -221,7 +242,7 @@ func products(w http.ResponseWriter, r *http.Request) {
 			var product_data []Product
 			for rows.Next() {
 		      	var product_field Product
-		       	if err := rows.Scan(&product_field.ID, &product_field.Name, &product_field.Description); err != nil {
+		       	if err := rows.Scan(&product_field.Id, &product_field.Name, &product_field.Description); err != nil {
 		        	fmt.Errorf("error: ", err)
 		        }
 		        product_data = append(product_data, product_field)
@@ -287,7 +308,7 @@ func editProducts(w http.ResponseWriter, r *http.Request) {
 	    return
 	}
 	sse := datastar.NewSSE(w, r)
-	sse.PatchElements(fmt.Sprintf(`<tr id="row-%v"><td>%v</td><td><input name="product-name" type="text" value="%v" data-bind:new-name required><td><input name="product-description" type="text" value="%v" data-bind:new-description required></td><td><button data-on:click="@get('/products')">Cancel</button></td><td><button data-on:click="@patch('/products?id=%v')">Update</button></td></form></tr>`, signals.ID, signals.ID, signals.Name, signals.ID))
+	sse.PatchElements(fmt.Sprintf(`<tr id="row-%v"><td>%v</td><td><input name="product-name" type="text" value="%v" data-bind:new-name required><td><input name="product-description" type="text" value="%v" data-bind:new-description required></td><td><button data-on:click="@get('/products')">Cancel</button></td><td><button data-on:click="@patch('/products?id=%v')">Update</button></td></form></tr>`, signals.Id, signals.Id, signals.Name, signals.Id))
 }
 
 func searchProducts(w http.ResponseWriter, r *http.Request){
@@ -308,7 +329,7 @@ func searchProducts(w http.ResponseWriter, r *http.Request){
 		var results []Product
 		for rows.Next() {
 	      	var product_field Product
-	       	if err := rows.Scan(&product_field.ID, &product_field.Name, product_field.Description); err != nil {
+	       	if err := rows.Scan(&product_field.Id, &product_field.Name, product_field.Description); err != nil {
 	        	fmt.Errorf("error: ", err)
 	        }
 	        results = append(results, product_field)
@@ -339,17 +360,459 @@ func searchProducts(w http.ResponseWriter, r *http.Request){
 func employees (w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 		case "GET":
+			signals := &Employee{}
+			if err := datastar.ReadSignals(r, signals); err != nil {
+			    http.Error(w, err.Error(), http.StatusBadRequest)
+			    return
+			}
+			rows, err := db.Query("SELECT * FROM employees")
+			if err != nil {
+				fmt.Errorf("error: ", err)
+			}
+			defer rows.Close()
+			var employee_data []Employee
+			for rows.Next() {
+		      	var employee_field Employee
+		       	if err := rows.Scan(&employee_field.Id, &employee_field.EmployeeName, &employee_field.JobTitle, &employee_field.Department, &employee_field.DaysSinceStarting, &employee_field.Phone, &employee_field.Email); err != nil {
+		        	fmt.Errorf("error: ", err)
+		        }
+		        employee_data = append(employee_data, employee_field)
+		   	}
+		   	if err := rows.Err(); err != nil {
+		        fmt.Errorf("error: ", err)
+		    }
+			rerr := rows.Close()
+				if rerr != nil {
+					fmt.Errorf("error: ", err)
+				}
 			t := template.Must(template.ParseFiles("templates/base.html", "templates/employees.html"))
+		case "POST":
+			result, err := db.Exec("INSERT INTO employees (employee_name, job_title, department, phone, company_email, salary) VALUES (?,?,?,?,?,?)", r.FormValue("employee-name"), r.FormValue("job-title"), r.FormValue("department"), r.FormValue("phone"), r.FormValue("company-email"), r.FormValue("salary"))
+		    if err != nil {
+		        fmt.Errorf("error: ", err)
+		    }
+		    id, err := result.LastInsertId()
+		    if err != nil {
+		        fmt.Errorf("error: %v, %v", id, err)
+		    }
+			http.Redirect(w, r, "/employees", http.StatusFound)
+		case "DELETE":
+			result, err := db.Exec("DELETE FROM employees WHERE id=?", r.FormValue("id"))
+			    if err != nil {
+			        fmt.Errorf("error: ", err)
+			    }
+			id, err := result.LastInsertId()
+			    if err != nil {
+			        fmt.Errorf("error: %v, %v", id, err)
+			    }
+			sse := datastar.NewSSE(w, r)
+			sse.Redirect("/employees")
+		case "PATCH":
+			signals := &Employee{}
+			if err := datastar.ReadSignals(r, signals); err != nil {
+			    http.Error(w, err.Error(), http.StatusBadRequest)
+			    return
+			}
+			sse := datastar.NewSSE(w, r)
+			result, err := db.Exec("UPDATE employees SET employee_name=?, job_title=?, department=?, phone=?, company_email=?, salary=? WHERE id=?", signals.New, signals.NewDescription, r.FormValue("id"))
+			    if err != nil {
+			        fmt.Errorf("error: ", err)
+			    }
+			id, err := result.LastInsertId()
+			    if err != nil {
+			        fmt.Errorf("error: %v, %v", id, err)
+			    }
+			sse.Redirect("/products")
+	}
+}
+
+func editEmployees(w http.ResponseWriter, r *http.Request) {
+	signals := &Employees{}
+	if err := datastar.ReadSignals(r, signals); err != nil {
+	    http.Error(w, err.Error(), http.StatusBadRequest)
+	    return
+	}
+	sse := datastar.NewSSE(w, r)
+	sse.PatchElements(fmt.Sprintf(`
+		<tr id="row-%v">
+			<td>%v</td>
+			<td><input name="employee-name" type="text" value="%v" data-bind:new-employee-name required>
+			<td><input name="new-job-title" type="text" value="%v" data-bind:new-job-title required></td>
+			<td><input name="new-department" type="text" value="%v" data-bind:new-department required></td>
+			<td><input name="new-start-date" type="text" value="%v" data-bind:new-start-date required></td>
+			<td><input name="new-phone" type="text" value="%v" data-bind:new-phone required></td>
+			<td><input name="new-email" type="text" value="%v" data-bind:new-email required></td>
+			<td><button data-on:click="@get('/employees')">Cancel</button></td>
+			<td><button data-on:click="@patch('/employees?id=%v')">Update</button></td>
+		</tr>
+		`, signals.EmployeeName, signals.JobTitle, signals.Department, signals.StartDate, signals.Phone, signals.Email))
+}
+
+func searchEmployees(w http.ResponseWriter, r *http.Request){
+	signals := &Search{}
+	if err := datastar.ReadSignals(r, signals); err != nil {
+	    http.Error(w, err.Error(), http.StatusBadRequest)
+	    return
+	}
+	fmt.Println("signals: ", signals)
+	switch signals.SearchBy {
+		case "Name":
+		pattern := "%" + signals.Query + "%"
+		rows, err := db.Query("SELECT * FROM employees WHERE employee_name LIKE ?", pattern)
+	    if err != nil {
+	        fmt.Errorf("error: ", err)
+	    }
+		defer rows.Close()
+		var employee_data []Employee
+		for rows.Next() {
+	      	var employee_field Employee
+	       	if err := rows.Scan(&employee_field.Id, &employee_field.EmployeeName, &employee_field.JobTitle, &employee_field.Department, &employee_field.DaysSinceStarting, &employee_field.Phone, &employee_field.Email); err != nil {
+	        	fmt.Errorf("error: ", err)
+	        }
+	        employee_data = append(employee_data, employee_field)
+	   	}
+	   	if err := rows.Err(); err != nil {
+	        fmt.Errorf("error: ", err)
+	    }
+		err := rows.Close()
+			if err != nil {
+				fmt.Errorf("error: ", err)
+			}
+		ipp := max(1, signals.ItemsPerPage)
+		pn := max(1, signals.PageNumber)
+		page := results[ipp*(min(pn - 1, len(results)/ipp)):min(pn*ipp, len(results))]
+		t, err := template.New("results").Parse(`
+			<tbody id="current-table">
+				{{range .pages}}
+				<tr id="row-{{.Id}}">
+					<td data-bind:id>{{.Id}}</td>
+					<td data-bind:employee-name>{{.EmployeeName}}</td>
+					<td data-bind:job-title>{{.JobTitle}}</td>
+					<td data-bind:department>{{.Department}}</td>
+					<td data-bind:phone>{{.Phone}}</td>
+    				<td data-bind:company-email>{{.CompanyEmail}}</td>
+					<td><button data-on:click="confirm('Are you sure?') && @delete('/customers?id={{.Id}}')">Delete</button></td>
+					<td><button data-on:click="@get('/customers/edit?id={{.Id}}&name={{.Name}}')">Edit</button></td>
+				</tr>
+				{{end}}
+			</tbody>
+			`)
+		if err != nil {
+      		fmt.Errorf("error: ", err)
+	    }
+	    var builder strings.Builder
+	    res := map[string][]Product{"pages": page}
+	    t.Execute(&builder, res)
+	    searchResult := builder.String()
+	    sse := datastar.NewSSE(w, r)
+		sse.PatchElements(searchResult)
 	}
 }
 
 func orders (w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 		case "GET":
+			signals := &Order{}
+			if err := datastar.ReadSignals(r, signals); err != nil {
+			    http.Error(w, err.Error(), http.StatusBadRequest)
+			    return
+			}
+			rows, err := db.Query("SELECT * FROM orders")
+			if err != nil {
+				fmt.Errorf("error: ", err)
+			}
+			defer rows.Close()
+			var order_data []Order
+			for rows.Next() {
+		      	var order_field Order
+		       	if err := rows.Scan(&order_field.Id, &order_field.CustomerId, &order_field.ProductId, &order_field.Quantity, &order_field.Total, &order_field.Progress, &order_field.Progress); err != nil {
+		        	fmt.Errorf("error: ", err)
+		        }
+		        order_data = append(order_data, order_field)
+		   	}
+		   	if err := rows.Err(); err != nil {
+		        fmt.Errorf("error: ", err)
+		    }
+			rerr := rows.Close()
+				if rerr != nil {
+					fmt.Errorf("error: ", err)
+				}
 			t := template.Must(template.ParseFiles("templates/base.html", "templates/orders.html"))
+			ipp := max(5, signals.ItemsPerPage)
+			pn := max(1, signals.PageNumber)
+			page := order_data[ipp*(min(pn - 1, len(order_data)/ipp)):min(pn*ipp, len(order_data))]
+			t.Execute(w, map[string]interface{}{
+				"data": page,
+			})
+		case "POST":
+			result, err := db.Exec("INSERT INTO orders (customer_id, product_id, quantity, progress) VALUES (?,?,?,?,?,?)", r.FormValue("customer-id"), r.FormValue("product-id"), r.FormValue("quantity"), r.FormValue("progress"))
+		    if err != nil {
+		        fmt.Errorf("error: ", err)
+		    }
+		    id, err := result.LastInsertId()
+		    if err != nil {
+		        fmt.Errorf("error: %v, %v", id, err)
+		    }
+			http.Redirect(w, r, "/orders", http.StatusFound)
+		case "DELETE":
+			result, err := db.Exec("DELETE FROM orders WHERE order_id=?", r.FormValue("order-id"))
+			    if err != nil {
+			        fmt.Errorf("error: ", err)
+			    }
+			id, err := result.LastInsertId()
+			    if err != nil {
+			        fmt.Errorf("error: %v, %v", id, err)
+			    }
+			sse := datastar.NewSSE(w, r)
+			sse.Redirect("/orders")
+		case "PATCH":
+			signals := &Order{}
+			if err := datastar.ReadSignals(r, signals); err != nil {
+			    http.Error(w, err.Error(), http.StatusBadRequest)
+			    return
+			}
+			sse := datastar.NewSSE(w, r)
+			result, err := db.Exec("UPDATE orders SET customer_id=?, product_id=?, quantity=?, progress=? WHERE id=?", signals.NewCustomerId, signals.NewProductId, signals.NewQuantity, signals.NewProgress, r.FormValue("id"))
+			    if err != nil {
+			        fmt.Errorf("error: ", err)
+			    }
+			id, err := result.LastInsertId()
+			    if err != nil {
+			        fmt.Errorf("error: %v, %v", id, err)
+			    }
+			sse.Redirect("/orders")
 	}
 }
 
+func searchOrders(w http.ResponseWriter, r *http.Request){
+	signals := &Search{}
+	if err := datastar.ReadSignals(r, signals); err != nil {
+	    http.Error(w, err.Error(), http.StatusBadRequest)
+	    return
+	}
+	switch signals.SearchBy {
+		case "customer-id":
+		pattern := "%" + signals.Query + "%"
+		rows, err := db.Query("SELECT * FROM orders WHERE order_id LIKE ?", pattern)
+	    if err != nil {
+	        fmt.Errorf("error: ", err)
+	    }
+		defer rows.Close()
+		var order_data []Order
+		for rows.Next() {
+	      	var order_field Order
+	       	if err := rows.Scan(&order_field.Id, &order_field.CustomerId, &order_field.ProductId, &order_field.Quantity, &order_field.Total, &order_field.Progress, &order_field.Progress); err != nil {
+	        	fmt.Errorf("error: ", err)
+	        }
+	        order_data = append(order_data, order_field)
+	   	}
+	   	if err := rows.Err(); err != nil {
+	        fmt.Errorf("error: ", err)
+	    }
+		rerr := rows.Close()
+			if rerr != nil {
+				fmt.Errorf("error: ", err)
+			}
+		ipp := max(1, signals.ItemsPerPage)
+		pn := max(1, signals.PageNumber)
+		page := results[ipp*(min(pn - 1, len(results)/ipp)):min(pn*ipp, len(results))]
+		t, err := template.New("results").Parse(`
+			<tbody id="current-table">
+				{{range .pages}}
+				<tr id="row-{{.Id}}">
+					<td data-bind:order-id>{{.OrderId}}</td>
+					<td data-bind:customer-id>{{.CustomerId}}</td>
+					<td data-bind:product-id>{{.ProductId}}</td>
+					<td data-bind:quantity>{{.Quantity}}</td>
+					<td data-bind:total>{{.Total}}</td>
+					<td data-bind:progress>{{.Progress}}</td>
+					<td><button data-on:click="confirm('Are you sure?') && @delete('/customers?id={{.Id}}')">Delete</button></td>
+					<td><button data-on:click="@get('/customers/edit?id={{.Id}}&name={{.Name}}')">Edit</button></td>
+				</tr>
+				{{end}}
+			</tbody>
+			`)
+		if err != nil {
+      		fmt.Errorf("error: ", err)
+	    }
+	    var builder strings.Builder
+	    res := map[string][]Product{"pages": page}
+	    t.Execute(&builder, res)
+	    searchResult := builder.String()
+	    sse := datastar.NewSSE(w, r)
+		sse.PatchElements(searchResult)
+	}
+}
+
+func editOrders(w http.ResponseWriter, r *http.Request) {
+	signals := &Order{}
+	if err := datastar.ReadSignals(r, signals); err != nil {
+	    http.Error(w, err.Error(), http.StatusBadRequest)
+	    return
+	}
+	sse := datastar.NewSSE(w, r)
+	sse.PatchElements(fmt.Sprintf(`
+		<tr id="row-%v">
+			<td>%v</td>
+			<td><input name="new-customer-id" type="number" value="%v" data-bind:new-customer-id required>
+			<td><input name="new-product-id" type="number" value="%v" min="1" max="5" data-bind:new-product-id required></td>
+			<td><input name="new-quantity" type="text" value="%v" data-bind:new-quantity required></td>
+			<td><button data-on:click="@get('/orders')">Cancel</button></td>
+			<td><button data-on:click="@patch('/orders?id=%v')">Update</button></td>
+		</tr>
+		`, signals.OrderId, signals.CustomerId, signals.ProductId, signals.Id))
+}
+
+func reviews (w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+		case "GET":
+			signals := &Review{}
+			if err := datastar.ReadSignals(r, signals); err != nil {
+			    http.Error(w, err.Error(), http.StatusBadRequest)
+			    return
+			}
+			rows, err := db.Query("SELECT * FROM reviews")
+			if err != nil {
+				fmt.Errorf("error: ", err)
+			}
+			defer rows.Close()
+			var review_data []Review
+			for rows.Next() {
+		      	var review_field Review
+		       	if err := rows.Scan(&review_field.OrderId, &review_field.Rating, &review_field.Review); err != nil {
+		        	fmt.Errorf("error: ", err)
+		        }
+		        review_data = append(review_data, review_field)
+		   	}
+		   	if err := rows.Err(); err != nil {
+		        fmt.Errorf("error: ", err)
+		    }
+			rerr := rows.Close()
+				if rerr != nil {
+					fmt.Errorf("error: ", err)
+				}
+			t := template.Must(template.ParseFiles("templates/base.html", "templates/reviews.html"))
+			ipp := max(5, signals.ItemsPerPage)
+			pn := max(1, signals.PageNumber)
+			page := review_data[ipp*(min(pn - 1, len(review_data)/ipp)):min(pn*ipp, len(review_data))]
+			t.Execute(w, map[string]interface{}{
+				"data": page,
+			})
+		case "POST":
+			result, err := db.Exec("INSERT INTO reviews (order_id, rating, review) VALUES (?,?,?)", r.FormValue("order-id"), r.FormValue("rating"), r.FormValue("review"))
+		    if err != nil {
+		        fmt.Errorf("error: ", err)
+		    }
+		    id, err := result.LastInsertId()
+		    if err != nil {
+		        fmt.Errorf("error: %v, %v", id, err)
+		    }
+			http.Redirect(w, r, "/reviews", http.StatusFound)
+		case "DELETE":
+			result, err := db.Exec("DELETE FROM reviews WHERE order_id=?", r.FormValue("order-id"))
+			    if err != nil {
+			        fmt.Errorf("error: ", err)
+			    }
+			id, err := result.LastInsertId()
+			    if err != nil {
+			        fmt.Errorf("error: %v, %v", id, err)
+			    }
+			sse := datastar.NewSSE(w, r)
+			sse.Redirect("/reviews")
+		case "PATCH":
+			signals := &Review{}
+			if err := datastar.ReadSignals(r, signals); err != nil {
+			    http.Error(w, err.Error(), http.StatusBadRequest)
+			    return
+			}
+			sse := datastar.NewSSE(w, r)
+			result, err := db.Exec("UPDATE reviews SET order_id=?, rating=?, review=? WHERE order_id=?", signals.NewOrderId, signals.NewRating, signals.NewQuantity, signals.NewReview, r.FormValue("id"))
+			    if err != nil {
+			        fmt.Errorf("error: ", err)
+			    }
+			id, err := result.LastInsertId()
+			    if err != nil {
+			        fmt.Errorf("error: %v, %v", id, err)
+			    }
+			sse.Redirect("/reviews")
+	}
+}
+
+func searchReviews(w http.ResponseWriter, r *http.Request){
+	signals := &Search{}
+	if err := datastar.ReadSignals(r, signals); err != nil {
+	    http.Error(w, err.Error(), http.StatusBadRequest)
+	    return
+	}
+	switch signals.SearchBy {
+		case "customer-id":
+		pattern := "%" + signals.Query + "%"
+		rows, err := db.Query("SELECT * FROM reviews WHERE order_id LIKE ?", pattern)
+	    if err != nil {
+	        fmt.Errorf("error: ", err)
+	    }
+		defer rows.Close()
+		var review_data []Review
+		for rows.Next() {
+	      	var review_field Review
+	       	if err := rows.Scan(&review_field.OrderId, &review_field.Rating, &review_field.Review); err != nil {
+	        	fmt.Errorf("error: ", err)
+	        }
+	        review_data = append(review_data, review_field)
+	   	}
+	   	if err := rows.Err(); err != nil {
+	        fmt.Errorf("error: ", err)
+	    }
+		rerr := rows.Close()
+			if rerr != nil {
+				fmt.Errorf("error: ", err)
+			}
+		ipp := max(1, signals.ItemsPerPage)
+		pn := max(1, signals.PageNumber)
+		page := results[ipp*(min(pn - 1, len(results)/ipp)):min(pn*ipp, len(results))]
+		t, err := template.New("results").Parse(`
+			<tbody id="current-table">
+				{{range .pages}}
+				<tr id="row-{{.Id}}">
+				    <td data-bind:order-id>{{.OrderId}}</td>
+				    <td data-bind:rating>{{.Rating}}</td>
+				    <td data-bind:review>{{.Review}}</td>
+					<td><button data-on:click="confirm('Are you sure?') && @delete('/reviews?id={{.Id}}')">Delete</button></td>
+					<td><button data-on:click="@get('/reviews/edit?id={{.Id}}&name={{.Name}}')">Edit</button></td>
+				</tr>
+				{{end}}
+			</tbody>
+			`)
+		if err != nil {
+      		fmt.Errorf("error: ", err)
+	    }
+	    var builder strings.Builder
+	    res := map[string][]Product{"pages": page}
+	    t.Execute(&builder, res)
+	    searchResult := builder.String()
+	    sse := datastar.NewSSE(w, r)
+		sse.PatchElements(searchResult)
+	}
+}
+
+func editReview(w http.ResponseWriter, r *http.Request) {
+	signals := &Review{}
+	if err := datastar.ReadSignals(r, signals); err != nil {
+	    http.Error(w, err.Error(), http.StatusBadRequest)
+	    return
+	}
+	sse := datastar.NewSSE(w, r)
+	sse.PatchElements(fmt.Sprintf(`
+		<tr id="row-%v">
+			<td>%v</td>
+			<td><input name="new-order-id" type="number" value="%v" data-bind:order-id required>
+			<td><input name="new-rating" type="number" value="%v" min="1" max="5" data-bind:rating required></td>
+			<td><input name="new-review" type="text" value="%v" data-bind:review required></td>
+			<td><button data-on:click="@get('/orders')">Cancel</button></td>
+			<td><button data-on:click="@patch('/orders?id=%v')">Update</button></td>
+		</tr>
+		`, signals.NewOrderId, signals.NewRating, signals.NewReview, signals.Id))
+}
 
 func main() {
 	config, err := ini.Load("config.ini")
@@ -387,6 +850,11 @@ func main() {
 	http.HandleFunc("/products/edit", products)
 
 	http.HandleFunc("/orders", orders)
+	http.HandleFunc("/orders/search", products)
+	http.HandleFunc("/orders/edit", products)
+
 	http.HandleFunc("/employees", employees)
+	http.HandleFunc("/employees/search", products)
+	http.HandleFunc("/employees/edit", products)
 	log.Fatal(http.ListenAndServe("localhost:8080", nil))
 }

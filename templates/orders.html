@@ -8,7 +8,7 @@
 <th>Progress</th>
 {{end}} {{define "tableData"}} {{range .data}}
 <tr id="row-{{.Id}}">
-    <td data-bind:id>{{.Id}}</td>
+    <td data-bind:order-id>{{.OrderId}}</td>
     <td data-bind:customer-id>{{.CustomerId}}</td>
     <td data-bind:product-id>{{.ProductId}}</td>
     <td data-bind:quantity>{{.Quantity}}</td>
@@ -22,7 +22,7 @@
         </button>
     </td>
     <td>
-        <button data-on:click="@patch('/orders?id={{.Id}}')">Edit</button>
+        <button data-on:click="@patch('/orders?order-id={{.Id}}')">Edit</button>
     </td>
 </tr>
 {{end}} {{end}} {{define "addResourceInputs"}}
