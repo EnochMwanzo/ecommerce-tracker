@@ -1,12 +1,20 @@
-{{define "title"}}Products{{end}} {{define "resource"}}product{{end}} {{define
-"tableHeaders"}}
+{{define "title"}}Products{{end}}
+
+{{define "resource"}}product{{end}}
+
+{{define "searchFields"}}
+<option value="product-name">Product Name</option>
+<option value="description">Description</option>
+{{end}}
+
+{{define"tableHeaders"}}
 <th>id</th>
 <th>product name</th>
 <th>description</th>
 {{end}} {{define "tableData"}} {{range .data}}
 <tr id="row-{{.Id}}">
     <td data-bind:product-id>{{.Id}}</td>
-    <td data-bind:product-name>{{.Name}}</td>
+    <td data-bind:product-name>{{.ProductName}}</td>
     <td data-bind:product-description>{{.Description}}</td>
     <td>
         <button
@@ -16,21 +24,12 @@
         </button>
     </td>
     <td>
-        <button
-            data-on:click="@get('/products/edit?product-id={{.Id}}&name={{.Name}')"
-        >
-            Edit
-        </button>
+        <button data-on:click="@get('/products/edit?id={{.Id}}">Edit</button>
     </td>
 </tr>
 {{end}} {{end}} {{define "addResourceInputs"}}
 <label for="product-name">product name</label>
 <input id="product-name" type="text" name="product-name" required />
-<label for="product-description">product description</label>
-<input
-    id="product-description"
-    type="text"
-    name="product-description"
-    required
-/>
+<label for="description">product description</label>
+<input id="description" type="text" name="description" required />
 {{end}}

@@ -1,43 +1,59 @@
-{{define "title"}}Employees{{end}} {{define "resource"}}employee{{end}} {{define
-"tableHeaders"}}
+{{define "title"}}Employees{{end}}
+
+{{define "resource"}}employee{{end}}
+
+{{define "searchFields"}}
+<option value="employee-name">Employee Name</option>
+<option value="job-title">Job Title</option>
+<option value="department">Department</option>
+<option value="start-date">Start Date</option>
+{{end}}
+
+{{define"tableHeaders"}}
 <th>Employee ID</th>
 <th>Employee Name</th>
 <th>Job Title</th>
 <th>Department</th>
-<th>Days Since Starting</th>
+<th>Start Date</th>
 <th>Phone</th>
 <th>Company Email</th>
-{{end}} {{define "tableData"}} {{range .data}}
-<tr id="row-{{.ID}}">
-    <td data-bind:id>{{.Id}}</td>
-    <td data-bind:employee-name>{{.EmployeeName}}</td>
-    <td data-bind:job-title>{{.JobTitle}}</td>
-    <td data-bind:department>{{.Department}}</td>
-    <td data-bind:days-since-starting>{{.DaysSinceStarting}}</td>
-    <td data-bind:phone>{{.Phone}}</td>
-    <td data-bind:company-email>{{.CompanyEmail}}</td>
-    <td>
-        <button
-            data-on:click="confirm('Are you sure?') && @delete('/employees?id={{.Id}}')"
-        >
-            Delete
-        </button>
-    </td>
-    <td>
-        <button data-on:click="@patch('/employees?id={{.Id}}')">Edit</button>
-    </td>
-</tr>
-{{end}} {{end}} {{define "addResourceInputs"}}
+{{end}}
+
+{{define "tableData"}}
+    {{range .data}}
+    <tr id="row-{{.ID}}">
+        <td data-bind:id>{{.Id}}</td>
+        <td data-bind:employee-name>{{.EmployeeName}}</td>
+        <td data-bind:job-title>{{.JobTitle}}</td>
+        <td data-bind:department>{{.Department}}</td>
+        <td data-bind:start-date>{{.StartDate}}</td>
+        <td data-bind:phone>{{.Phone}}</td>
+        <td data-bind:company-email>{{.CompanyEmail}}</td>
+        <td>
+            <button
+                data-on:click="confirm('Are you sure?') && @delete('/employees?id={{.Id}}')"
+            >
+                Delete
+            </button>
+        </td>
+        <td>
+            <button data-on:click="@get('/employees/edit?id={{.Id}}')">Edit</button>
+        </td>
+    </tr>
+    {{end}}
+{{end}}
+
+{{define "addResourceInputs"}}
 <label for="employee-name">Employee Name</label>
-<input id="employee-name" type="text" name="employee-name" required />
+<input id="employee-name" type="text" name="employee-name" required /><br />
 <label for="job-title">Job Title</label>
-<input id="job-title" type="text" name="job-title" required />
+<input id="job-title" type="text" name="job-title" required /><br />
 <label for="department">Department</label>
-<input id="department" type="text" name="department" required />
-<label for="department">Department</label>
-<input id="department" type="text" name="department" required />
+<input id="department" type="text" name="department" required /><br />
+<label for="start-date">Start Date</label>
+<input id="start-date" type="date" name="start-date" required /><br />
 <label for="phone">Phone</label>
-<input id="phone" type="tel" name="phone" required />
+<input id="phone" type="tel" name="phone" required /><br />
 <label for="company-email">Company Email</label>
-<input id="company-email" type="email" name="company-email" required />
+<input id="company-email" type="email" name="company-email" required /><br />
 {{end}}

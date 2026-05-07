@@ -31,14 +31,25 @@
         }
 
         nav {
-            display: inline-flex;
             background: turquoise;
+            margin: 0;
         }
 
-        a:hover {
+        .navbar-item {
+            display: inline-flex;
+            flex-grow: 1;
+            padding: 1.5em 0.5em;
+        }
+
+        .navbar-item:hover {
             background: darkblue;
+        }
+        a {
+            text-decoration: none;
+        }
+        a:hover {
             color: white;
-            text-decoration: none
+            text-decoration: none;
         }
 
         @media (prefers-color-scheme: dark) {
@@ -59,13 +70,13 @@
         <header>
         <nav>
             <ul>
-                <li class="navbar-item"><a href="/customers">Customers</a></li>
-                <li class="navbar-item"><a href="/products">Products</a></li>
-                <li class="navbar-item"><a href="/employees">Employees</a></li>
+                <a href="/customers"><li class="navbar-item">Customers</li></a>
+                <a href="/products"><li class="navbar-item">Products</li></a>
+                <a href="/employees"><li class="navbar-item">Employees</li></a>
                 <!--<li class="navbar-item"><a href="#">Support Tickets</a></li>-->
-                <li class="navbar-item"><a href="/orders">Orders</a></li>
-                <li class="navbar-item"><a href="#">Reviews</a></li>
-                <li class="navbar-item"><a href="#">Creators</a></li>-->
+                <a href="/orders"><li class="navbar-item">Orders</li></a>
+                <a href="/reviews"><li class="navbar-item">Reviews</li></a>
+                <!--<li class="navbar-item"><a href="#">Creators</a></li>-->
             </ul>
         </nav>
         </header>
@@ -77,8 +88,13 @@
                 type="text"
                 placeholder="Search..."
                 data-bind:search
-                data-on:input__debounce.200ms="@get('/{{block "resource" .}}s/search')"
+                data-on:input__debounce.200ms="@get('/{{block "resource" .}}{{end}}s/search')"
             />
+            <label for="search-by">search by</label>
+            <select id="search-by">
+                {{block "searchFields" . }}
+                {{end}}
+            </select>
             <div style="line-height:1.5em;">&#8202;</div>
             <table>
                 <thead>
@@ -87,11 +103,17 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
                     {{block "tableData" . }}{{end}}
-                    </tr>
+
                 </tbody>
             </table>
+            <p>Pages</p>
+            <div class="page-number">
+                <label for="page-number">page number</label>
+                <input type="number" id="page-number" min="1" data-bind:page-number data-on:input__debounce.1000ms="@get('/{{block "resource" .}}{{end}}/search')" value="1">
+            </div>
+            <label for="items-per-page">items per page</label>
+            <input id="items-per-page" type="number"  min="5" data-bind:items-per-page data-on:input__debounce.1000ms="@get('/{{block "resource" .}}{{end}}/search')" value="5">
             <h2>Add a {{block "resource" . }}{{end}}</h2>
             <form method="POST" action="/{{block "resource" .}}{{end}}s">
                 {{block "addResourceInputs" . }}{{end}}

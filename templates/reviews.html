@@ -1,22 +1,37 @@
-{{define "title"}}Reviews{{end}} {{define "resource"}}review{{end}} {{define
-"tableHeaders"}}
+{{define "title"}}Reviews{{end}}
+
+{{define "resource"}}review{{end}}
+
+{{define "searchFields"}}
+<option value="order-id">Order ID</option>
+<option value="rating">Rating</option>
+<option value="review">Review</option>
+{{end}}
+
+{{define"tableHeaders"}}
 <th>Order ID</th>
 <th>Rating</th>
 <th>Review</th>
-{{end}} {{define "tableData"}} {{range .data}}
-<tr id="row-{{.ID}}">
-    <td data-bind:order-id>{{.OrderId}}</td>
-    <td data-bind:rating>{{.Rating}}</td>
-    <td data-bind:review>{{.Review}}</td>
-    <td>
-        <button
-            data-on:click="confirm('Are you sure?') && @delete('/reviews?id={{.ID}}')"
-        >
-            Delete
-        </button>
-    </td>
-</tr>
-{{end}} {{end}} {{define "addResourceInputs"}}
+{{end}}
+
+{{define "tableData"}}
+    {{range .data}}
+    <tr id="row-{{.OrderId}}">
+        <td data-bind:order-id>{{.OrderId}}</td>
+        <td data-bind:rating>{{.Rating}}</td>
+        <td data-bind:review>{{.Review}}</td>
+        <td>
+            <button
+                data-on:click="confirm('Are you sure?') && @delete('/reviews?id={{.OrderId}}')"
+            >
+                Delete
+            </button>
+        </td>
+    </tr>
+    {{end}}
+{{end}}
+
+{{define "addResourceInputs"}}
 <label for="order-id">Order ID</label>
 <input id="order-id" type="number" name="order-id" required />
 <label for="rating">Rating</label>

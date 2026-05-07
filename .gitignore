@@ -2,3 +2,4 @@ config.ini
 *.sql
 Caddyfile
 notes.txt
+.zed

@@ -1,35 +1,57 @@
-{{define "title"}}Orders{{end}} {{define "resource"}}order{{end}} {{define
-"tableHeaders"}}
+{{define "title"}}Orders{{end}}
+
+{{define "resource"}}order{{end}}
+
+{{define "searchFields"}}
+<option value="order-id">Order ID</option>
+<option value="customer-id">Customer ID</option>
+<option value="product-id">Product ID</option>
+<option value="progress">Progress</option>
+{{end}}
+
+{{define"tableHeaders"}}
 <th>Order ID</th>
 <th>Customer ID</th>
 <th>Product ID</th>
 <th>Quantity</th>
 <th>Total</th>
 <th>Progress</th>
-{{end}} {{define "tableData"}} {{range .data}}
-<tr id="row-{{.Id}}">
-    <td data-bind:order-id>{{.OrderId}}</td>
-    <td data-bind:customer-id>{{.CustomerId}}</td>
-    <td data-bind:product-id>{{.ProductId}}</td>
-    <td data-bind:quantity>{{.Quantity}}</td>
-    <td data-bind:total>{{.Total}}</td>
-    <td data-bind:progress>{{.Progress}}</td>
-    <td>
-        <button
-            data-on:click="confirm('Are you sure?') && @delete('/orders?id={{.Id}}')"
-        >
-            Delete
-        </button>
-    </td>
-    <td>
-        <button data-on:click="@patch('/orders?order-id={{.Id}}')">Edit</button>
-    </td>
-</tr>
-{{end}} {{end}} {{define "addResourceInputs"}}
+{{end}}
+
+{{define "tableData"}}
+    {{range .data}}
+    <tr id="row-{{.Id}}">
+        <td data-signals:order-id>{{.Id}}</td>
+        <td data-bind:customer-id>{{.CustomerId}}</td>
+        <td data-bind:product-id>{{.ProductId}}</td>
+        <td data-bind:quantity>{{.Quantity}}</td>
+        <td data-bind:total>{{.Total}}</td>
+        <td data-bind:progress>{{.Progress}}</td>
+        <td>
+            <button
+                data-on:click="confirm('Are you sure?') && @delete('/orders?id={{.Id}}')"
+            >
+                Delete
+            </button>
+        </td>
+        <td>
+            <button data-on:click="@patch('/orders/edit?id={{.Id}}')">Edit</button>
+        </td>
+    </tr>
+    {{end}}
+{{end}}
+
+{{define "addResourceInputs"}}
 <label for="customer-id">Customer ID</label>
 <input id="customer-id" type="number" name="customer-id" required />
 <label for="product-id">Product ID</label>
 <input id="product-id" type="number" name="product-id" required />
 <label for="quantity">Quantity</label>
 <input id="quantity" type="number" name="quantity" required />
+<label for="progress">Progress</label>
+<select id="progress" name="progress">
+    <option value="received">Received</option>
+    <option value="in progress">In Progress</option>
+    <option value= "delivered">Delivered</option>
+</select>
 {{end}}
