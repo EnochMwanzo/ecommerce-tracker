@@ -15,6 +15,7 @@ import (
 
 var db *sql.DB
 var rows *sql.Rows
+var err error
 
 type Customer struct {
 	Id           int    `json:"id"`
@@ -36,6 +37,11 @@ type Product struct {
 	Id          int    `json:"id"`
 	ProductName string `json:"productName"`
 	Description string `json:"description"`
+	StockInWareouse int `json:"stockInWareouse"`
+	StockAtManufacturer int `json:"stockAtManufacturer"`
+	StockAtRetailers int `json:"stockAtRetailers"`
+	Price float `json:"price"`
+	ReorderPoint bool `json:"reorderPoint"`
 
 	NewProductName string `json:"newProductName"`
 	NewDescription string `json:"newDescription"`
@@ -97,11 +103,54 @@ type Review struct {
 	NewReview  string `json:"newReview"`
 }
 
+type Transactions struct {
+	Id int `json:"id"`
+	Counterparty string `json:"counterparty"`
+	TransactionDate string `json:"transactionDate"`
+	Amount float `json:"amount"`
+	AccountType string `json:"accountType"`
+	Category string `json:"rating"`
+	notes string `json:"notes"`
+}
+
+type CashFlowStatements struct {
+    TimePeriod string `json:"notes"`
+    OperatingCashFlow float `json:"operatingCashFlow"`
+    TotalSales float `json:"totalSales"`
+    CashSpentOnAssets float `json:"cashSpentOnAssets"`
+    OperatingExpenses float `json:"operatingExpenses"`
+};
+
+type IncomeStatements struct {
+    TimePeriod string `json:"timePeriod"`
+    TotalSales float `json:"totalSales"`
+    CostOfGoodsSold float `json:"costOfGoodsSold"`
+    Profit float `json:"profit"`
+    PromotionExpenses float `json:"promotionExpenses"`
+    SellingGeneralAdministraticeExpenses float `json:"sellingGeneralAdministraticeExpenses"`
+    DepreciationAndAmoritization float `json:"depreciationAndAmoritization"`
+};
+
+type BalanceSheets struct {
+    TimePeriod string `json:"timePeriod"`
+    Cash float `json:"cash"`
+    AccountsReceivable float `json:"accountsReceivable"`
+    PrepaidExpenses float `json:"prepaidExpenses"`
+    Inventory float `json:"inventory"`
+    PropertyAndEquipment float `json:"propertyAndEquipment"`
+    Goodwill float `json:"goodwill"`
+    AccountsPayable float `json:"accountsPayable"`
+    AccruedExpenses float `json:"accruedExpenses"`
+    UnearnedRevenue float `json:"unearnedRevenue"`
+    LongTermDebt float `json:"longTermDebt"`
+};
+
+
 type Search struct {
 	Query        string `json:"query"`
 	SearchBy     string `json:"searchBy"`
-	ItemsPerPage int    `json: "itemsPerPage"`
-	PageNumber   int    `json: "pageNumber"`
+	ItemsPerPage int    `json:"itemsPerPage"`
+	PageNumber   int    `json:"pageNumber"`
 }
 
 func index(w http.ResponseWriter, r *http.Request) {
@@ -233,20 +282,18 @@ func searchCustomers(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	pattern := "%" + signals.Query + "%"
 	switch signals.SearchBy {
-	case "customer-name":
-		pattern := "%" + signals.Query + "%"
-		rows, err = db.Query("SELECT * FROM customers WHERE customer_name LIKE ?", pattern)
-	case "cohort":
-		pattern := "%" + signals.Query + "%"
-		rows, err = db.Query("SELECT * FROM customers WHERE cohort LIKE ?", pattern)
-	case "subscriber":
-		pattern := "%" + signals.Query + "%"
-		rows, err = db.Query("SELECT * FROM customers WHERE subscriber LIKE 1", pattern)
-	}
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+		case "customer-name":
+			rows, err = db.Query("SELECT * FROM customers WHERE customer_name LIKE ?", pattern)
+		case "cohort":
+			rows, err = db.Query("SELECT * FROM customers WHERE cohort LIKE ?", pattern)
+		case "subscriber":
+			rows, err = db.Query("SELECT * FROM customers WHERE subscriber LIKE 1", pattern)
+		}
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
 	}
 	defer rows.Close()
 	var results []Customer
@@ -394,59 +441,61 @@ func searchProducts(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	fmt.Println("signals: ", signals)
+	pattern := "%" + signals.Query + "%"
 	switch signals.SearchBy {
-	case "Name":
-		pattern := "%" + signals.Query + "%"
-		rows, err := db.Query("SELECT * FROM products WHERE product_name LIKE ?", pattern)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		defer rows.Close()
-		var results []Product
-		for rows.Next() {
-			var product_field Product
-			if err := rows.Scan(&product_field.Id, &product_field.ProductName, product_field.Description); err != nil {
-				http.Error(w, err.Error(), http.StatusBadRequest)
-				return
-			}
-			results = append(results, product_field)
-		}
-		if err := rows.Err(); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		err = rows.Close()
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		ipp := max(1, signals.ItemsPerPage)
-		pn := max(1, signals.PageNumber)
-		page := results[ipp*(min(pn-1, len(results)/ipp)) : min(pn*ipp, len(results))]
-		t, err := template.New("results").Parse(`
-			<tbody id="current-table">
-				{{range .pages}}
-				<tr id="row-{{.ID}}">
-					<td data-signals="{ID: {{.ID}} }">{{.ID}}</td>
-					<td data-bind:product-name>{{.Name}}</td>
-					<td><button data-on:click="confirm('Are you sure?') && @delete('/customers?id={{.ID}}')">Delete</button></td>
-					<td><button data-on:click="@get('/customers/edit?id={{.ID}}&name={{.Name}}')">Edit</button></td>
-				</tr>
-				{{end}}
-			</tbody>`)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		var builder strings.Builder
-		resultsPage := map[string][]Product{"pages": page}
-		t.Execute(&builder, resultsPage)
-		searchResult := builder.String()
-		sse := datastar.NewSSE(w, r)
-		sse.PatchElements(searchResult)
+		case "product-name":
+			rows, err = db.Query("SELECT * FROM products WHERE product_name LIKE ?", pattern)
+		case "description":
+		rows, err = db.Query("SELECT * FROM products WHERE description LIKE ?", pattern)
 	}
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	defer rows.Close()
+	var results []Product
+	for rows.Next() {
+		var product_field Product
+		if err := rows.Scan(&product_field.Id, &product_field.ProductName, product_field.Description); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		results = append(results, product_field)
+	}
+	if err := rows.Err(); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	err = rows.Close()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	fmt.Println("rows: ", results)
+	ipp := max(1, signals.ItemsPerPage)
+	pn := max(1, signals.PageNumber)
+	page := results[ipp*(min(pn-1, len(results)/ipp)) : min(pn*ipp, len(results))]
+	t, err := template.New("results").Parse(`
+		<tbody id="current-table">
+			{{range .pages}}
+			<tr id="row-{{.ID}}">
+				<td data-signals="{ID: {{.ID}} }">{{.ID}}</td>
+				<td data-bind:product-name>{{.Name}}</td>
+				<td><button data-on:click="confirm('Are you sure?') && @delete('/customers?id={{.ID}}')">Delete</button></td>
+				<td><button data-on:click="@get('/customers/edit?id={{.ID}}&name={{.Name}}')">Edit</button></td>
+			</tr>
+			{{end}}
+		</tbody>`)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	var builder strings.Builder
+	resultsPage := map[string][]Product{"pages": page}
+	t.Execute(&builder, resultsPage)
+	searchResult := builder.String()
+	sse := datastar.NewSSE(w, r)
+	sse.PatchElements(searchResult)
 }
 
 func employees(w http.ResponseWriter, r *http.Request) {
@@ -518,7 +567,7 @@ func employees(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		sse := datastar.NewSSE(w, r)
-		result, err := db.Exec("UPDATE employees SET employee_name=?, job_title=?, department=?, phone=?, company_email=?, salary=? WHERE id=?", signals.NewEmployeeName, signals.NewJobTitle, signals.NewDepartment, signals.NewStartDate, signals.NewPhone, signals.NewEmail, r.FormValue("id"))
+		result, err := db.Exec("UPDATE employees SET employee_name=?, job_title=?, department=?, phone=?, company_email=?, salary=? WHERE id=?", signals.NewEmployeeName, signals.NewJobTitle, signals.NewDepartment, signals.NewPhone, signals.NewEmail, r.FormValue("id"))
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
@@ -544,7 +593,6 @@ func editEmployee(w http.ResponseWriter, r *http.Request) {
 			<td><input name="new-employee-name" type="text" value="%v" data-bind:new-employee-name required>
 			<td><input name="new-job-title" type="text" value="%v" data-bind:new-job-title required></td>
 			<td><input name="new-department" type="text" value="%v" data-bind:new-department required></td>
-			<td><input name="new-start-date" type="text" value="%v" data-bind:new-start-date required></td>
 			<td><input name="new-phone" type="phone" value="%v" data-bind:new-phone required></td>
 			<td><input name="new-email" type="email" value="%v" data-bind:new-email required></td>
 			<td><input name="salary" type="number" value="%v" data-bind:new-salary required></td>
@@ -560,11 +608,16 @@ func searchEmployees(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	fmt.Println("signals: ", signals)
+	pattern := "%" + signals.Query + "%"
 	switch signals.SearchBy {
-	case "Name":
-		pattern := "%" + signals.Query + "%"
-		rows, err := db.Query("SELECT * FROM employees WHERE employee_name LIKE ?", pattern)
+	case "employee-name":
+		rows, err = db.Query("SELECT * FROM employees WHERE employee_name LIKE ?", pattern)
+	case "job-title":
+	rows, err = db.Query("SELECT * FROM employees WHERE job_title LIKE ?", pattern)
+	case "department":
+	rows, err = db.Query("SELECT * FROM employees WHERE department LIKE ?", pattern)
+	case "start-date":
+	rows, err = db.Query("SELECT * FROM employees WHERE start_date LIKE ?", pattern)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
@@ -713,10 +766,17 @@ func searchOrders(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	pattern := "%" + signals.Query + "%"
 	switch signals.SearchBy {
 	case "customer-id":
-		pattern := "%" + signals.Query + "%"
-		rows, err := db.Query("SELECT * FROM orders WHERE order_id LIKE ?", pattern)
+		rows, err = db.Query("SELECT * FROM orders WHERE customer_id LIKE ?", pattern)
+	case "order-id":
+	rows, err = db.Query("SELECT * FROM orders WHERE order_id LIKE ?", pattern)
+	case "product-id":
+	rows, err = db.Query("SELECT * FROM orders WHERE product_id LIKE ?", pattern)
+	case "progress":
+	rows, err = db.Query("SELECT * FROM orders WHERE progress LIKE ?", pattern)
+	}
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
@@ -725,7 +785,7 @@ func searchOrders(w http.ResponseWriter, r *http.Request) {
 		var results []Order
 		for rows.Next() {
 			var order_field Order
-			if err := rows.Scan(&order_field.Id, &order_field.CustomerId, &order_field.ProductId, &order_field.Quantity, &order_field.Total, &order_field.Progress, &order_field.Progress); err != nil {
+			if err := rows.Scan(&order_field.Id, &order_field.CustomerId, &order_field.ProductId, &order_field.Quantity, &order_field.Total, &order_field.Progress); err != nil {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
 			}
@@ -769,7 +829,6 @@ func searchOrders(w http.ResponseWriter, r *http.Request) {
 		searchResult := builder.String()
 		sse := datastar.NewSSE(w, r)
 		sse.PatchElements(searchResult)
-	}
 }
 
 func editOrder(w http.ResponseWriter, r *http.Request) {
@@ -892,10 +951,15 @@ func searchReviews(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	pattern := "%" + signals.Query + "%"
 	switch signals.SearchBy {
 	case "customer-id":
-		pattern := "%" + signals.Query + "%"
-		rows, err := db.Query("SELECT * FROM reviews WHERE order_id LIKE ?", pattern)
+		rows, err = db.Query("SELECT * FROM reviews WHERE order_id LIKE ?", pattern)
+	case "rating":
+	rows, err = db.Query("SELECT * FROM reviews WHERE order_id LIKE ?", pattern)
+	case "review":
+	rows, err = db.Query("SELECT * FROM reviews WHERE order_id LIKE ?", pattern)
+	}
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
@@ -945,7 +1009,6 @@ func searchReviews(w http.ResponseWriter, r *http.Request) {
 		searchResult := builder.String()
 		sse := datastar.NewSSE(w, r)
 		sse.PatchElements(searchResult)
-	}
 }
 
 func editReview(w http.ResponseWriter, r *http.Request) {
@@ -965,6 +1028,61 @@ func editReview(w http.ResponseWriter, r *http.Request) {
 			<td><button data-on:click="@patch('/orders?id=%v')">Update</button></td>
 		</tr>
 		`, signals.NewOrderId, signals.NewRating, signals.NewReview, signals.OrderId))
+}
+
+func finances(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case "GET":
+		transactionSignals := &Transactions{}
+		if err := datastar.ReadSignals(r, signals); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		rows, err := db.Query("SELECT * FROM balance_sheets JOIN cash_flow_statements JOIN income_statements")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		defer rows.Close()
+		var balance_sheet_data []BalanceSheets
+		var cash_flow_statement_data []CashFlowStatements
+		var income_statement_data []IncomeStatements
+		for rows.Next() {
+			var balance_sheet_field []BalanceSheets
+			var cash_flow_statement_field []CashFlowStatements
+			var income_statement_field []IncomeStatements
+			if err := rows.Scan(
+				&balance_sheet_field.TimePeriod, &balance_sheet_field.Cash, &balance_sheet_field.AccountsReceivable, &balance_sheet_field.PrepaidExpenses, &balance_sheet_field.Inventory, &balance_sheet_field.PropertyAndEquipment, &balance_sheet_field.Goodwill, &balance_sheet_field.AccountsPayable, &balance_sheet_field.AccruedExpenses, &balance_sheet_field.UnearnedRevenue, &balance_sheet_field.LongTermDebt, &cash_flow_statement_field.TimePeriod, &cash_flow_statement_field.OperatingCashFlow, &cash_flow_statement_field.TotalSales, &cash_flow_statement_field.CashSpentOnAssets, &cash_flow_statement_field.OperatingExpenses,
+				&income_statement_field.TimePeriod, &income_statement_field.TotalSales, &income_statement_field.CostOfGoodsSold, &income_statement_field.Profit, &income_statement_field.PromotionExpenses, &income_statement_field.SellingGeneralAdministraticeExpenses, &income_statement_field.DepreciationAndAmoritization,
+			); err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			balance_sheet_data = append(balance_sheet_data, balance_sheet_field)
+			cash_flow_statement_data = append(cash_flow_statement_data, cash_flow_statement_field)
+			income_statement_data = append(income_statement_data, income_statement_field)
+		}
+		if err := rows.Err(); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		err = rows.Close()
+		if rowErr != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		rows, err := db.Query("SELECT * FROM transactions")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		defer rows.Close()
+		var transaction_data []Transaction
+		for rows.Next(){
+			var transaction_field Transaction
+			if err := rows.Scan(&transaction_field.Id, &transaction_field.Counterparty, &transaction_field.TransactionDate, &transaction_field.Amount, &transaction_field.AccountType, &transaction_field.Category, )
+		}
+	}
 }
 
 func main() {

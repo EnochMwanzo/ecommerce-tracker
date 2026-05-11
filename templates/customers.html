@@ -35,6 +35,20 @@
     </td>
 </tr>
 {{end}} {{end}} {{define "addResourceInputs"}}
-<label for="customer-name">Review</label>
-<input id="customer-name" type="text" name="name" required />
+<label for="customer-name">Customer Name</label>
+<input id="customer-name" type="text" name="customer-name" required /><br>
+<label for="subscriber">Subscriber</label>
+<select id="subscriber" name="subscriber">
+    <option value="0">False</option>
+    <option value="1">True</option>
+</select> <br>
+<label for="cohort">Review</label>
+<select id="cohort" name="cohort">
+    <option value="0">engaged prospect</option>
+    <option value="1">lapsed prospect</option>
+    <option value="2">one purchase</option>
+    <option value="3">two or more purchases</option>
+    <option value="4">VIP</option>
+    <option value="5">churned</option>
+</select><br>
 {{end}}

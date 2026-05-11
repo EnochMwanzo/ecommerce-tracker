@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>
+            Financials
+        </title>
+        <script
+            type="module"
+            src="https://cdn.jsdelivr.net/gh/starfederation/datastar@1.0.0-RC.8/bundles/datastar.js"
+        ></script>
+        <style>
+        :root {
+            --light-bg-color: lightblue
+            --dark-bg-color: darkslategrey
+        }
+        body {
+            background-color: var(--main-bg-color);
+            margin: 0 auto;
+            text-align: center;
+            font-family: sans-serif
+        }
+
+        table {
+            border: 1px solid;
+            text-align: center;
+            margin: 0 auto;
+        }
+        td {
+            border: 1px solid;
+            padding: 1em;
+        }
+
+        nav {
+            background: turquoise;
+            margin: 0;
+        }
+
+        input {
+            margin: 1em 0;
+            align-items: center;
+        }
+
+        .navbar-item {
+            display: inline-flex;
+            flex-grow: 1;
+            padding: 1.5em 0.5em;
+        }
+
+        .navbar-item:hover {
+            background: darkblue;
+        }
+        a {
+            text-decoration: none;
+        }
+        a:hover {
+            color: white;
+            text-decoration: none;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            body {
+                background: darkslategrey;
+                color: lightblue;
+            }
+            a:hover {
+                background: lightblue;
+                color: black;
+                text-decoration: none
+            }
+        }
+        </style>
+    </head>
+    <div>
+    <body>
+        <header>
+        <nav>
+            <ul>
+                <a href="/customers"><li class="navbar-item">Customers</li></a>
+                <a href="/products"><li class="navbar-item">Products</li></a>
+                <a href="/employees"><li class="navbar-item">Employees</li></a>
+                <!--<li class="navbar-item"><a href="#">Support Tickets</a></li>-->
+                <a href="/orders"><li class="navbar-item">Orders</li></a>
+                <a href="/reviews"><li class="navbar-item">Reviews</li></a>
+                <a href="/finances"><li class="navbar-item">Finances</li></a>
+                <!--<li class="navbar-item"><a href="#">Creators</a></li>-->
+            </ul>
+        </nav>
+        </header>
+        <div class="wrapper">
+        <main>
+        <h1>Finances</h1>
+            <div style="line-height:1.5em;">&#8202;</div>
+            <h2>Cash Flow</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Time Period</th>
+                        <th>Operating Cash Flow</th>
+                        <th>Total Sales</th>
+                        <th>Cash Spent on Assets</th>
+                        <th>Operating Expenses</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{range .cashFlowStatements}}
+                    <tr>
+                        <td>{{.timePeriod}}</td>
+                        <td>{{.operatingCashFlow}}</td>
+                        <td>{{.totalSales}}</td>
+                        <td>{{.cashSpentOnAssets}}</td>
+                        <td>{{.operatingExpenses}}</td>
+                    </tr>
+                </tbody>
+            </table>
+            <h2>Income</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Time Period</th>
+                        <th>Total Sales</th>
+                        <th>Cost of Goods Sold</th>
+                        <th>Profit</th>
+                        <th>Promotion Expenses</th>
+                        <th>Selling & General Administrative Expenses</th>
+                        <th>Depreciation & Amoritization</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{range .incomeStatements}}
+                    <tr>
+                        <td>{{.TimePeriod}}</td>
+                        <td>{{.TotalSales}}</td>
+                        <td>{{.CostOfGoodsSold}}</td>
+                        <td>{{.Profit}}</td>
+                        <td>{{.PromotionExpenses}}</td>
+                        <td>{{.SellingGeneralAdministraticeExpenses}}</td>
+                        <td>{{.DepreciationAndAmoritization}}
+                    </tr>
+                </tbody>
+            </table>
+            <h2>Balance Sheet</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Time Period</th>
+                        <th>Cash</th>
+                        <th>Accounts Receivable</th>
+                        <th>Prepaid Expenses</th>
+                        <th>Inventory</th>
+                        <th>Property & Equipment</th>
+                        <th>Goodwill</th>
+                        <th>Accounts Payable</th>
+                        <th>Accured Expenses</th>
+                        <th>Unearned Revenue</th>
+                        <th>Long Term Debt</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{range .incomeStatements}}
+                    <tr>
+                        <td>{{.TimePeriod}}</td>
+                        <td>{{.Cash}}</td>
+                        <td>{{.AccountsReceivable}}</td>
+                        <td>{{.PrepaidExpenses}}</td>
+                        <td>{{.Inventory}}</td>
+                        <td>{{.PropertyAndEquipment}}</td>
+                        <td>{{.Goodwill}}</td>
+                        <td>{{.AccountsPayable}}</td>
+                        <td>{{.AccruedExpenses}}</td>
+                        <td>{{.UnearnedRevenue}}</td>
+                        <td>{{.LongTermDebt}}</td>
+                    </tr>
+                </tbody>
+            </table>
+            <h2>Transactions</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Transaction ID</th>
+                        <th>Counterparty</th>
+                        <th>Transaction Date</th>
+                        <th>Amount</th>
+                        <th>Account Type</th>
+                        <th>Category</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{range .transactions}}
+                    <tr>
+                        {{.Counterparty}}
+                        {{.TransactionDate}}
+                        {{.Amount}}
+                        {{.AccountType}}
+                        {{.Category}}
+                    </tr>
+                </tbody>
+            </table>
+        </main>
+        <footer>
+        </footer>
+        <div>
+    </body>
+</html>

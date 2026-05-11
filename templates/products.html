@@ -7,29 +7,34 @@
 <option value="description">Description</option>
 {{end}}
 
-{{define"tableHeaders"}}
+{{define "tableHeaders"}}
 <th>id</th>
 <th>product name</th>
 <th>description</th>
-{{end}} {{define "tableData"}} {{range .data}}
-<tr id="row-{{.Id}}">
-    <td data-bind:product-id>{{.Id}}</td>
-    <td data-bind:product-name>{{.ProductName}}</td>
-    <td data-bind:product-description>{{.Description}}</td>
-    <td>
-        <button
-            data-on:click="confirm('Are you sure?') && @delete('/products?id={{.Id}}')"
-        >
-            Delete
-        </button>
-    </td>
-    <td>
-        <button data-on:click="@get('/products/edit?id={{.Id}}">Edit</button>
-    </td>
-</tr>
-{{end}} {{end}} {{define "addResourceInputs"}}
+{{end}}
+
+{{define "tableData"}}
+    {{range .data}}
+    <tr id="row-{{.Id}}">
+        <td data-bind:product-id>{{.Id}}</td>
+        <td data-bind:product-name>{{.ProductName}}</td>
+        <td data-bind:product-description>{{.Description}}</td>
+        <td>
+            <button
+                data-on:click="confirm('Are you sure?') && @delete('/products?id={{.Id}}')"
+            >
+                Delete
+            </button>
+        </td>
+        <td>
+            <button data-on:click="@get('/products/edit?id={{.Id}}">Edit</button>
+        </td>
+    </tr>
+    {{end}}
+{{end}}
+{{define "addResourceInputs"}}
 <label for="product-name">product name</label>
-<input id="product-name" type="text" name="product-name" required />
+<input id="product-name" type="text" name="product-name" required /><br />
 <label for="description">product description</label>
-<input id="description" type="text" name="description" required />
+<input id="description" type="text" name="description" required /><br>
 {{end}}

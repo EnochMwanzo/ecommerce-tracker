@@ -9,7 +9,7 @@
 <option value="progress">Progress</option>
 {{end}}
 
-{{define"tableHeaders"}}
+{{define "tableHeaders"}}
 <th>Order ID</th>
 <th>Customer ID</th>
 <th>Product ID</th>
@@ -43,15 +43,15 @@
 
 {{define "addResourceInputs"}}
 <label for="customer-id">Customer ID</label>
-<input id="customer-id" type="number" name="customer-id" required />
+<input id="customer-id" type="number" name="customer-id" required /><br />
 <label for="product-id">Product ID</label>
-<input id="product-id" type="number" name="product-id" required />
+<input id="product-id" type="number" name="product-id" required /><br />
 <label for="quantity">Quantity</label>
-<input id="quantity" type="number" name="quantity" required />
+<input id="quantity" type="number" name="quantity" required /><br />
 <label for="progress">Progress</label>
 <select id="progress" name="progress">
     <option value="received">Received</option>
     <option value="in progress">In Progress</option>
     <option value= "delivered">Delivered</option>
-</select>
+</select><br>
 {{end}}

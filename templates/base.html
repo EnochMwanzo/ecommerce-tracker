@@ -12,16 +12,19 @@
             src="https://cdn.jsdelivr.net/gh/starfederation/datastar@1.0.0-RC.8/bundles/datastar.js"
         ></script>
         <style>
+        :root {
+            --light-bg-color: lightblue
+            --dark-bg-color: darkslategrey
+        }
         body {
-            background-color: lightblue;
+            background-color: var(--main-bg-color);
             margin: 0 auto;
-            /*width: 100%;*/
             text-align: center;
             font-family: sans-serif
         }
 
         table {
-            border: 1px solid black;
+            border: 1px solid;
             text-align: center;
             margin: 0 auto;
         }
@@ -33,6 +36,11 @@
         nav {
             background: turquoise;
             margin: 0;
+        }
+
+        input {
+            margin: 1em 0;
+            align-items: center;
         }
 
         .navbar-item {
@@ -76,6 +84,7 @@
                 <!--<li class="navbar-item"><a href="#">Support Tickets</a></li>-->
                 <a href="/orders"><li class="navbar-item">Orders</li></a>
                 <a href="/reviews"><li class="navbar-item">Reviews</li></a>
+                <a href="/finances"><li class="navbar-item">Finances</li></a>
                 <!--<li class="navbar-item"><a href="#">Creators</a></li>-->
             </ul>
         </nav>
@@ -87,11 +96,11 @@
                 id="search"
                 type="text"
                 placeholder="Search..."
-                data-bind:search
+                data-bind:query
                 data-on:input__debounce.200ms="@get('/{{block "resource" .}}{{end}}s/search')"
             />
             <label for="search-by">search by</label>
-            <select id="search-by">
+            <select id="search-by" data-bind:search-by>
                 {{block "searchFields" . }}
                 {{end}}
             </select>
