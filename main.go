@@ -22,53 +22,31 @@ type Customer struct {
 	CustomerName string `json:"customerName"`
 	Subscriber bool `json:"subscriber"`
 	Cohort string `json:"cohort"`
-	SignupDate string `signupDate`
-
+	SignupDate string `json:"signupDate"`
+}
+type CustomerPatch struct {
 	NewCustomerName string `json:"newCustomerName"`
 	NewSubscriber bool `json:"newSubscriber"`
 	NewCohort string `json:"newCohort"`
-	NewSignupDate string `newSignupDate`
-
-	ItemsPerPage int `json: "itemsPerPage"`
-	PageNumber   int `json: "pageNumber"`
+	NewSignupDate string `json:"newSignupDate"`
 }
-
 type Product struct {
-	Id          int    `json:"id"`
-	ProductName string `json:"productName"`
-	Description string `json:"description"`
-	StockInWareouse int `json:"stockInWareouse"`
-	StockAtManufacturer int `json:"stockAtManufacturer"`
-	StockAtRetailers int `json:"stockAtRetailers"`
-	Price float `json:"price"`
-	ReorderPoint bool `json:"reorderPoint"`
-
-	NewProductName string `json:"newProductName"`
-	NewDescription string `json:"newDescription"`
-
-	ItemsPerPage int `json: "itemsPerPage"`
-	PageNumber   int `json: "pageNumber"`
-}
-
-type Order struct {
-	Id         int    `json:"Id"`
-	CustomerId int    `json:"customerId"`
-	ProductId  int    `json:"productId"`
-	Quantity   int    `json:"quantity"`
-	Total      int    `json:"total"`
-	Progress   string `json:"progress"`
-
-	ItemsPerPage int `json: "itemsPerPage"`
-	PageNumber   int `json: "pageNumber"`
-}
-
-type OrderPatch struct {
-	NewCustomerId int    `json:"newCustomerId"`
-	NewProductId  int    `json:"newProductId"`
-	NewQuantity   int    `json:"newQuantity"`
-	NewProgress   string `json:"newProgress"`
-}
-
+		Id          int    `json:"id"`
+		ProductName string `json:"productName"`
+		Description string `json:"description"`
+		StockAtWarehouse int `json:"stockAtWarehouse"`
+		StockAtManufacturer int `json:"stockAtManufacturer"`
+		Price float32 `json:"price"`
+		ReorderPoint int `json:"reorderPoint"`
+		LeadTimeDays int `json:"leadTimeDays"`
+	}
+	type ProductPatch struct {
+		NewProductName string `json:"newProductName"`
+		NewDescription string `json:"newDescription"`
+		NewStockAtWarehouse int `json:"newStockAtWarehouse"`
+		NewStockAtManufacturer int `json:"newStockAtManufacturer"`
+		NewPrice float32 `json:"newPrice"`
+	}
 type Employee struct {
 	Id           int    `json:"id"`
 	EmployeeName string `json:"employeeName"`
@@ -78,7 +56,8 @@ type Employee struct {
 	Phone        string `json:"phone"`
 	Email        string `json:"email"`
 	Salary float32 `json:"salary"`
-
+}
+type EmployeePatch struct {
 	NewEmployeeName string `json:"newEmployeeName"`
 	NewJobTitle     string `json:"newJobTitle"`
 	NewDepartment   string `json:"newDepartment"`
@@ -86,65 +65,78 @@ type Employee struct {
 	NewPhone        string `json:"newPhone"`
 	NewEmail        string `json:"newEmail"`
 	NewSalary float32 `json:"newSalary"`
-
-	ItemsPerPage int `json: "itemsPerPage"`
-	PageNumber   int `json: "pageNumber"`
 }
-
+type Order struct {
+	Id         int    `json:"id"`
+	CustomerId int    `json:"customerId"`
+	ProductId  int    `json:"productId"`
+	Quantity   int    `json:"quantity"`
+	Total      float32    `json:"total"`
+	Progress   string `json:"progress"`
+	OrderDate   string `json:"orderDate"`
+}
+type OrderPatch struct {
+	NewCustomerId int    `json:"newCustomerId"`
+	NewProductId  int    `json:"newProductId"`
+	NewQuantity   int    `json:"newQuantity"`
+	NewProgress   string `json:"newProgress"`
+	NewOrderDate  string `json:"newOrderDate"`
+}
 type Review struct {
 	OrderId      int    `json:"id"`
 	Rating       int    `json:"rating"`
 	Review       string `json:"review"`
-	ItemsPerPage int    `json: "itemsPerPage"`
-	PageNumber   int    `json: "pageNumber"`
-
-	NewOrderId int    `json:"newId"`
-	NewRating  int    `json:"newRating"`
-	NewReview  string `json:"newReview"`
 }
-
-type Transactions struct {
+type Transaction struct {
 	Id int `json:"id"`
 	Counterparty string `json:"counterparty"`
 	TransactionDate string `json:"transactionDate"`
-	Amount float `json:"amount"`
+	Amount float32 `json:"amount"`
 	AccountType string `json:"accountType"`
 	Category string `json:"rating"`
-	notes string `json:"notes"`
+	Notes string `json:"notes"`
 }
-
+type TransactionPatch struct {
+	NewCounterparty string `json:"newCounterparty"`
+	NewTransactionDadete string `json:"newTransactionDate"`
+	NewAmount float32 `json:"newAmount"`
+	NewAccountType string `json:"newAccountType"`
+	NewCategory string `json:"newRating"`
+	NewNotes string `json:"newNotes"`
+}
 type CashFlowStatements struct {
     TimePeriod string `json:"notes"`
-    OperatingCashFlow float `json:"operatingCashFlow"`
-    TotalSales float `json:"totalSales"`
-    CashSpentOnAssets float `json:"cashSpentOnAssets"`
-    OperatingExpenses float `json:"operatingExpenses"`
-};
-
+    OperatingCashFlow float32 `json:"operatingCashFlow"`
+    TotalSales float32 `json:"totalSales"`
+    CashSpentOnAssets float32 `json:"cashSpentOnAssets"`
+    OperatingExpenses float32 `json:"operatingExpenses"`
+}
 type IncomeStatements struct {
     TimePeriod string `json:"timePeriod"`
-    TotalSales float `json:"totalSales"`
-    CostOfGoodsSold float `json:"costOfGoodsSold"`
-    Profit float `json:"profit"`
-    PromotionExpenses float `json:"promotionExpenses"`
-    SellingGeneralAdministraticeExpenses float `json:"sellingGeneralAdministraticeExpenses"`
-    DepreciationAndAmoritization float `json:"depreciationAndAmoritization"`
-};
-
+    TotalSales float32 `json:"totalSales"`
+    CostOfGoodsSold float32 `json:"costOfGoodsSold"`
+    Profit float32 `json:"profit"`
+    PromotionExpenses float32 `json:"promotionExpenses"`
+    SellingAndGeneralAdministrativeExpenses float32 `json:"sellingAndGeneralAdministrativeExpenses"`
+    DepreciationAndAmoritization float32 `json:"depreciationAndAmoritization"`
+}
 type BalanceSheets struct {
     TimePeriod string `json:"timePeriod"`
-    Cash float `json:"cash"`
-    AccountsReceivable float `json:"accountsReceivable"`
-    PrepaidExpenses float `json:"prepaidExpenses"`
-    Inventory float `json:"inventory"`
-    PropertyAndEquipment float `json:"propertyAndEquipment"`
-    Goodwill float `json:"goodwill"`
-    AccountsPayable float `json:"accountsPayable"`
-    AccruedExpenses float `json:"accruedExpenses"`
-    UnearnedRevenue float `json:"unearnedRevenue"`
-    LongTermDebt float `json:"longTermDebt"`
-};
-
+    Cash float32 `json:"cash"`
+    AccountsReceivable float32 `json:"accountsReceivable"`
+    PrepaidExpenses float32 `json:"prepaidExpenses"`
+    Inventory float32 `json:"inventory"`
+    PropertyAndEquipment float32 `json:"propertyAndEquipment"`
+    Goodwill float32 `json:"goodwill"`
+    AccountsPayable float32 `json:"accountsPayable"`
+    AccruedExpenses float32 `json:"accruedExpenses"`
+    UnearnedRevenue float32 `json:"unearnedRevenue"`
+    LongTermDebt float32 `json:"longTermDebt"`
+}
+type Pagination struct {
+	ItemsPerPage int `json:"itemsPerPage"`
+	PageNumber   int `json:"pageNumber"`
+}
 
 type Search struct {
 	Query        string `json:"query"`
@@ -163,8 +155,13 @@ func index(w http.ResponseWriter, r *http.Request) {
 func customers(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
-		signals := &Customer{}
-		if err := datastar.ReadSignals(r, signals); err != nil {
+		pageSignals := &Pagination{}
+		if err := datastar.ReadSignals(r, pageSignals); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		customerSignals := &Customer{}
+		if err := datastar.ReadSignals(r, customerSignals); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -174,14 +171,14 @@ func customers(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		defer rows.Close()
-		var customer_data []Customer
+		var customerRecords []Customer
 		for rows.Next() {
-			var customer_field Customer
-			if err := rows.Scan(&customer_field.Id, &customer_field.CustomerName, &customer_field.Subscriber, &customer_field.Cohort, &customer_field.SignupDate); err != nil {
+			var customerFields Customer
+			if err := rows.Scan(&customerFields.Id, &customerFields.CustomerName, &customerFields.Subscriber, &customerFields.Cohort, &customerFields.SignupDate); err != nil {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
 			}
-			customer_data = append(customer_data, customer_field)
+			customerRecords = append(customerRecords, customerFields)
 		}
 		if err := rows.Err(); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -193,9 +190,9 @@ func customers(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		t := template.Must(template.ParseFiles("templates/base.html", "templates/customers.html"))
-		ipp := max(5, signals.ItemsPerPage)
-		pn := max(1, signals.PageNumber)
-		page := customer_data[ipp*(min(pn-1, len(customer_data)/ipp)) : min(pn*ipp, len(customer_data))]
+		ipp := max(5, pageSignals.ItemsPerPage)
+		pn := max(1, pageSignals.PageNumber)
+		page := customerRecords[ipp*(min(pn-1, len(customerRecords)/ipp)) : min(pn*ipp, len(customerRecords))]
 		t.Execute(w, map[string]interface{}{
 			"data": page,
 		})
@@ -223,14 +220,14 @@ func customers(w http.ResponseWriter, r *http.Request) {
 		sse := datastar.NewSSE(w, r)
 		sse.Redirect("/customers")
 	case "PATCH":
-		signals := &Customer{}
-		if err := datastar.ReadSignals(r, signals); err != nil {
+		customerPatchSignals := &CustomerPatch{}
+		if err := datastar.ReadSignals(r, customerPatchSignals); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 		sse := datastar.NewSSE(w, r)
-		if signals.NewCustomerName != "" {
-			result, err := db.Exec("UPDATE customers SET customer_name=? subscriber=?, cohort=?, signupDate=? WHERE id=?", signals.NewCustomerName, r.FormValue("id"))
+		if customerPatchSignals.NewCustomerName != "" {
+			result, err := db.Exec("UPDATE customers SET customer_name=? subscriber=?, cohort=?, signupDate=? WHERE id=?", customerPatchSignals.NewCustomerName, customerPatchSignals.NewSubscriber, customerPatchSignals.NewCohort, customerPatchSignals.NewSignupDate, r.FormValue("id"))
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
@@ -246,34 +243,41 @@ func customers(w http.ResponseWriter, r *http.Request) {
 }
 
 func editCustomer(w http.ResponseWriter, r *http.Request) {
-	signals := &Customer{}
+	type CustomerRow struct {
+		Customer Customer `json:"row18"`
+	}
+	signals := &CustomerRow{}
 	if err := datastar.ReadSignals(r, signals); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	sse := datastar.NewSSE(w, r)
 	sse.PatchElements(fmt.Sprintf(`
-		<tr id="row-%v">
+		<tr id="%v">
 			<td>%v</td>
-			<td><input name="customer-name" type="text" value="%v" data-bind:new-customer-name required></td>
+			<td><input data-bind:new-customer-name name="new-customer-name" type="text" value="%v" required></td>
 			<td>
-				<select name="subscriber" type="text" data-bind:subsrciber>
-					<option value="false">false</option>
-					<option value="true">true</option>
+				<select data-bind:new-subscriber name="new-subscriber" value="%v">
+					<option value=0>false</option>
+					<option value=1>true</option>
 				</select>
 			</td>
 		    <td>
-				<select name="cohort" data-bind:cohort>
-					<option value="received">received</option>
-					<option value="in-progress">in progress</option>
-					<option value="delivered">delivered</option>
+				<select data-bind:new-cohort name="new-cohort">
+					<option value="0">engaged prospect</option>
+					<option value="0">engaged prospect</option>
+					<option value="1">lapsed prospect</option>
+					<option value="2">one purchase</option>
+					<option value="3">two purchases</option>
+					<option value="4">VIP</option>
+					<option value="5">churned</option>
 				</select>
 			</td>
-		    <td><input name="signup-date" data-bind:signup-date>%v</td>
+		    <td><input data-bind:new-signup-date name="new-signup-date" type="date" value="%v"></td>
 			<td><button data-on:click="@get('/customers')">Cancel</button></td>
 			<td><button data-on:click="@patch('/customers?id=%v')">Update</button></td>
 		</tr>
-		`, r.FormValue("id"), r.FormValue("id"), r.FormValue("name"), r.FormValue("id")))
+		`, r.FormValue("id"), signals.Customer.Id, signals.Customer.CustomerName, signals.Customer.Subscriber, signals.Customer.Cohort, signals.Customer.SignupDate, signals.Customer.Id))
 }
 
 func searchCustomers(w http.ResponseWriter, r *http.Request) {
@@ -298,12 +302,12 @@ func searchCustomers(w http.ResponseWriter, r *http.Request) {
 	defer rows.Close()
 	var results []Customer
 	for rows.Next() {
-		var customer_field Customer
-		if err := rows.Scan(&customer_field.Id, &customer_field.CustomerName); err != nil {
+		var customerFields Customer
+		if err := rows.Scan(&customerFields.Id, &customerFields.CustomerName); err != nil {
 			fmt.Errorf("search error: ", err.Error())
 			return
 		}
-		results = append(results, customer_field)
+		results = append(results, customerFields)
 	}
 	ipp := max(1, signals.ItemsPerPage)
 	pn := max(1, signals.PageNumber)
@@ -338,29 +342,29 @@ func searchCustomers(w http.ResponseWriter, r *http.Request) {
 func products(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
-		signals := &Product{}
-		if err := datastar.ReadSignals(r, signals); err != nil {
+	pageSignals := &Pagination{}
+	if err := datastar.ReadSignals(r, pageSignals); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	rows, err := db.Query("SELECT * FROM products")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	defer rows.Close()
+	var productRecords []Product
+	for rows.Next() {
+		var productFields Product
+		if err := rows.Scan(&productFields.Id, &productFields.ProductName, &productFields.Description, &productFields.Price, &productFields.StockAtWarehouse, &productFields.StockAtManufacturer, &productFields.ReorderPoint, &productFields.LeadTimeDays); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		rows, err := db.Query("SELECT * FROM products")
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		defer rows.Close()
-		var product_data []Product
-		for rows.Next() {
-			var product_field Product
-			if err := rows.Scan(&product_field.Id, &product_field.ProductName, &product_field.Description); err != nil {
-				http.Error(w, err.Error(), http.StatusBadRequest)
-				return
-			}
-			product_data = append(product_data, product_field)
+		productRecords = append(productRecords, productFields)
 		}
 		if err := rows.Err(); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
+	 		return
 		}
 		err = rows.Close()
 		if err != nil {
@@ -368,14 +372,14 @@ func products(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		t := template.Must(template.ParseFiles("templates/base.html", "templates/products.html"))
-		ipp := max(5, signals.ItemsPerPage)
-		pn := max(1, signals.PageNumber)
-		page := product_data[ipp*(min(pn-1, len(product_data)/ipp)) : min(pn*ipp, len(product_data))]
+		ipp := max(5, pageSignals.ItemsPerPage)
+		pn := max(1, pageSignals.PageNumber)
+		page := productRecords[ipp*(min(pn-1, len(productRecords)/ipp)) : min(pn*ipp, len(productRecords))]
 		t.Execute(w, map[string]interface{}{
 			"data": page,
 		})
 	case "POST":
-		result, err := db.Exec("INSERT INTO products (product_name, product_description) VALUES (?,?)", r.FormValue("product-name"), r.FormValue("product-description"))
+		result, err := db.Exec("INSERT INTO products (product_name, description, price, stock_at_warehouse, stock_at_manufacturer) VALUES (?,?,?,?,?)", r.FormValue("product-name"), r.FormValue("description"), r.FormValue("price"), r.FormValue("stock-at-warehouse"), r.FormValue("stock-at-manufacturer"))
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
@@ -398,17 +402,13 @@ func products(w http.ResponseWriter, r *http.Request) {
 		sse := datastar.NewSSE(w, r)
 		sse.Redirect("/products")
 	case "PATCH":
-		signals := &Product{}
-		if err := datastar.ReadSignals(r, signals); err != nil {
+		productPatchSignals := &ProductPatch{}
+		if err := datastar.ReadSignals(r, productPatchSignals); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 		sse := datastar.NewSSE(w, r)
-		result, err := db.Exec("UPDATE products SET product_name=?, product_description=? WHERE id=?", signals.NewProductName, signals.NewDescription, r.FormValue("id"))
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
+		result, err := db.Exec("UPDATE products SET product_name=?, description=?, price=?, stock_at_warehouse=?, stock_at_manufacturer=? WHERE id=?", productPatchSignals.NewProductName, productPatchSignals.NewDescription, productPatchSignals.NewPrice, productPatchSignals.NewStockAtWarehouse, productPatchSignals.NewStockAtManufacturer, r.FormValue("id"))
 		id, err := result.LastInsertId()
 		if err != nil {
 			fmt.Errorf("error: %v, %v", id, err)
@@ -418,21 +418,29 @@ func products(w http.ResponseWriter, r *http.Request) {
 }
 
 func editProduct(w http.ResponseWriter, r *http.Request) {
-	signals := &Product{}
+	type ProductRow struct {
+			Product Product `json:"row2"`
+	}
+	signals := &ProductRow{}
 	if err := datastar.ReadSignals(r, signals); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	sse := datastar.NewSSE(w, r)
 	sse.PatchElements(fmt.Sprintf(`
-		<tr id="row-%v">
-			<td>%v</td>
-			<td><input name="new-product-name" type="text" value="%v" data-bind:new-product-name required></td>
-			<td><input name="product-description" type="text" value="%v" data-bind:new-description required></td>
-			<td><button data-on:click="@get('/products')">Cancel</button></td>
+		<tr id="%v">
+  			<td>%v</td>
+	        <td><input data-bind:new-product-name name="new-product-name" value="%v" required></td>
+			<td><input data-bind:new-description name="new-description" value="%v" required></td>
+	        <td><input type="number" data-bind:new-stock-at-warehouse name="new-stock-at-warehouse" value="%v" required></td>
+	        <td><input type="number" data-bind:new-stock-at-manufacturer name="new-stock-at-manufacturer" value="%v" required></td>
+	        <td><input type="number" data-bind:new-price name="new-price" value="%v" required></td>
+	        <td>%v</td>
+	        <td>%v</td>
+         	<td><button data-on:click="@get('/products')">Cancel</button></td>
 			<td><button data-on:click="@patch('/products?id=%v')">Update</button></td>
-		</tr>
-		`, signals.Id, signals.Id, signals.ProductName, signals.Id))
+        </tr>
+		`, r.FormValue("id"), signals.Product.Id, signals.Product.ProductName, signals.Product.Description, signals.Product.StockAtWarehouse, signals.Product.StockAtManufacturer, signals.Product.Price, signals.Product.ReorderPoint, signals.Product.LeadTimeDays, signals.Product.Id))
 }
 
 func searchProducts(w http.ResponseWriter, r *http.Request) {
@@ -455,12 +463,12 @@ func searchProducts(w http.ResponseWriter, r *http.Request) {
 	defer rows.Close()
 	var results []Product
 	for rows.Next() {
-		var product_field Product
-		if err := rows.Scan(&product_field.Id, &product_field.ProductName, product_field.Description); err != nil {
+		var productFields Product
+		if err := rows.Scan(&productFields.Id, &productFields.ProductName, &productFields.Description, &productFields.StockAtWarehouse, &productFields.StockAtManufacturer, &productFields.Price, &productFields.ReorderPoint, &productFields.LeadTimeDays, ); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		results = append(results, product_field)
+		results = append(results, productFields)
 	}
 	if err := rows.Err(); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -501,25 +509,30 @@ func searchProducts(w http.ResponseWriter, r *http.Request) {
 func employees(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
-		signals := &Employee{}
-		if err := datastar.ReadSignals(r, signals); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
+	pageSignals := &Pagination{}
+	if err := datastar.ReadSignals(r, pageSignals); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	employeeSignals := &Employee{}
+	if err := datastar.ReadSignals(r, employeeSignals); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 		rows, err := db.Query("SELECT * FROM employees")
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 		defer rows.Close()
-		var employee_data []Employee
+		var employeeRecords []Employee
 		for rows.Next() {
-			var employee_field Employee
-			if err := rows.Scan(&employee_field.Id, &employee_field.EmployeeName, &employee_field.JobTitle, &employee_field.Department, &employee_field.StartDate, &employee_field.Phone, &employee_field.Email, &employee_field.Salary); err != nil {
+			var employeeFields Employee
+			if err := rows.Scan(&employeeFields.Id, &employeeFields.EmployeeName, &employeeFields.JobTitle, &employeeFields.Department, &employeeFields.StartDate, &employeeFields.Phone, &employeeFields.Email, &employeeFields.Salary); err != nil {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
 			}
-			employee_data = append(employee_data, employee_field)
+			employeeRecords = append(employeeRecords, employeeFields)
 		}
 		if err := rows.Err(); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -531,9 +544,9 @@ func employees(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		t := template.Must(template.ParseFiles("templates/base.html", "templates/employees.html"))
-		ipp := max(5, signals.ItemsPerPage)
-		pn := max(1, signals.PageNumber)
-		page := employee_data[ipp*(min(pn-1, len(employee_data)/ipp)) : min(pn*ipp, len(employee_data))]
+		ipp := max(5, pageSignals.ItemsPerPage)
+		pn := max(1, pageSignals.PageNumber)
+		page := employeeRecords[ipp*(min(pn-1, len(employeeRecords)/ipp)) : min(pn*ipp, len(employeeRecords))]
 		t.Execute(w, map[string]interface{}{
 			"data": page,
 		})
@@ -561,13 +574,13 @@ func employees(w http.ResponseWriter, r *http.Request) {
 		sse := datastar.NewSSE(w, r)
 		sse.Redirect("/employees")
 	case "PATCH":
-		signals := &Employee{}
-		if err := datastar.ReadSignals(r, signals); err != nil {
+		employeeSignalsPatch := &EmployeePatch{}
+		if err := datastar.ReadSignals(r, employeeSignalsPatch); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 		sse := datastar.NewSSE(w, r)
-		result, err := db.Exec("UPDATE employees SET employee_name=?, job_title=?, department=?, phone=?, company_email=?, salary=? WHERE id=?", signals.NewEmployeeName, signals.NewJobTitle, signals.NewDepartment, signals.NewPhone, signals.NewEmail, r.FormValue("id"))
+		result, err := db.Exec("UPDATE employees SET employee_name=?, job_title=?, department=?, start_date=?, phone=?, company_email=?, salary=? WHERE id=?", employeeSignalsPatch.NewEmployeeName, employeeSignalsPatch.NewJobTitle, employeeSignalsPatch.NewDepartment, employeeSignalsPatch.NewStartDate, employeeSignalsPatch.NewPhone, employeeSignalsPatch.NewEmail, employeeSignalsPatch.NewSalary, r.FormValue("id"))
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
@@ -581,7 +594,10 @@ func employees(w http.ResponseWriter, r *http.Request) {
 }
 
 func editEmployee(w http.ResponseWriter, r *http.Request) {
-	signals := &Employee{}
+	type EmployeeRow struct {
+			Employee Employee `json:"row1"`
+	}
+	signals := &EmployeeRow{}
 	if err := datastar.ReadSignals(r, signals); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -593,13 +609,14 @@ func editEmployee(w http.ResponseWriter, r *http.Request) {
 			<td><input name="new-employee-name" type="text" value="%v" data-bind:new-employee-name required>
 			<td><input name="new-job-title" type="text" value="%v" data-bind:new-job-title required></td>
 			<td><input name="new-department" type="text" value="%v" data-bind:new-department required></td>
+			<td><input name="new-start-date" type="date" value="%v" data-bind:new-start-date required></td>
 			<td><input name="new-phone" type="phone" value="%v" data-bind:new-phone required></td>
 			<td><input name="new-email" type="email" value="%v" data-bind:new-email required></td>
 			<td><input name="salary" type="number" value="%v" data-bind:new-salary required></td>
 			<td><button data-on:click="@get('/employees')">Cancel</button></td>
 			<td><button data-on:click="@patch('/employees?id=%v')">Update</button></td>
 		</tr>
-		`, signals.EmployeeName, signals.JobTitle, signals.Department, signals.StartDate, signals.Phone, signals.Email))
+		`,r.FormValue("id"), signals.Employee.Id, signals.Employee.EmployeeName, signals.Employee.JobTitle, signals.Employee.Department, signals.Employee.StartDate, signals.Employee.Phone, signals.Employee.Email, signals.Employee.Salary, r.FormValue("id")))
 }
 
 func searchEmployees(w http.ResponseWriter, r *http.Request) {
@@ -625,12 +642,12 @@ func searchEmployees(w http.ResponseWriter, r *http.Request) {
 		defer rows.Close()
 		var results []Employee
 		for rows.Next() {
-			var employee_field Employee
-			if err := rows.Scan(&employee_field.Id, &employee_field.EmployeeName, &employee_field.JobTitle, &employee_field.Department, &employee_field.StartDate, &employee_field.Phone, &employee_field.Email, &employee_field.Salary); err != nil {
+			var employeeFields Employee
+			if err := rows.Scan(&employeeFields.Id, &employeeFields.EmployeeName, &employeeFields.JobTitle, &employeeFields.Department, &employeeFields.StartDate, &employeeFields.Phone, &employeeFields.Email, &employeeFields.Salary); err != nil {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
 			}
-			results = append(results, employee_field)
+			results = append(results, employeeFields)
 		}
 		if err = rows.Err(); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -676,13 +693,13 @@ func searchEmployees(w http.ResponseWriter, r *http.Request) {
 func orders(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
-		signals := &Order{}
-		signalsToBePatched := &OrderPatch{}
-		if err := datastar.ReadSignals(r, signals); err != nil {
+		orderSignals := &Order{}
+		if err := datastar.ReadSignals(r, orderSignals); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		if err := datastar.ReadSignals(r, signalsToBePatched); err != nil {
+		pageSignals := &Pagination{}
+		if err := datastar.ReadSignals(r, pageSignals); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -692,14 +709,14 @@ func orders(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		defer rows.Close()
-		var order_data []Order
+		var orderRecords []Order
 		for rows.Next() {
-			var order_field Order
-			if err := rows.Scan(&order_field.Id, &order_field.CustomerId, &order_field.ProductId, &order_field.Quantity, &order_field.Total, &order_field.Progress); err != nil {
+			var orderFields Order
+			if err := rows.Scan(&orderFields.Id, &orderFields.CustomerId, &orderFields.ProductId, &orderFields.Quantity, &orderFields.Total, &orderFields.Progress, &orderFields.OrderDate); err != nil {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
 			}
-			order_data = append(order_data, order_field)
+			orderRecords = append(orderRecords, orderFields)
 		}
 		if err := rows.Err(); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -711,14 +728,14 @@ func orders(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		t := template.Must(template.ParseFiles("templates/base.html", "templates/orders.html"))
-		ipp := max(5, signals.ItemsPerPage)
-		pn := max(1, signals.PageNumber)
-		page := order_data[ipp*(min(pn-1, len(order_data)/ipp)) : min(pn*ipp, len(order_data))]
+		ipp := max(5, pageSignals.ItemsPerPage)
+		pn := max(1, pageSignals.PageNumber)
+		page := orderRecords[ipp*(min(pn-1, len(orderRecords)/ipp)) : min(pn*ipp, len(orderRecords))]
 		t.Execute(w, map[string]interface{}{
 			"data": page,
 		})
 	case "POST":
-		result, err := db.Exec("INSERT INTO orders (customer_id, product_id, quantity, progress) VALUES (?,?,?,?)", r.FormValue("customer-id"), r.FormValue("product-id"), r.FormValue("quantity"), r.FormValue("progress"))
+		result, err := db.Exec("INSERT INTO orders (customer_id, product_id, quantity, progress, order_date) VALUES (?,?,?,?, CURRENT_DATE())", r.FormValue("customer-id"), r.FormValue("product-id"), r.FormValue("quantity"), r.FormValue("progress"))
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
@@ -729,7 +746,7 @@ func orders(w http.ResponseWriter, r *http.Request) {
 		}
 		http.Redirect(w, r, "/orders", http.StatusFound)
 	case "DELETE":
-		result, err := db.Exec("DELETE FROM orders WHERE order_id=?", r.FormValue("order-id"))
+		result, err := db.Exec("DELETE FROM orders WHERE order_id=?", r.FormValue("id"))
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
@@ -741,13 +758,13 @@ func orders(w http.ResponseWriter, r *http.Request) {
 		sse := datastar.NewSSE(w, r)
 		sse.Redirect("/orders")
 	case "PATCH":
-		signalsToBePatched := &OrderPatch{}
-		if err := datastar.ReadSignals(r, signalsToBePatched); err != nil {
+		orderPatchSignals := &OrderPatch{}
+		if err := datastar.ReadSignals(r, orderPatchSignals); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 		sse := datastar.NewSSE(w, r)
-		result, err := db.Exec("UPDATE orders SET customer_id=?, product_id=?, quantity=?, progress=? WHERE id=?", signalsToBePatched.NewCustomerId, signalsToBePatched.NewProductId, signalsToBePatched.NewQuantity, signalsToBePatched.NewProgress, r.FormValue("id"))
+		result, err := db.Exec("UPDATE orders SET customer_id=?, product_id=?, quantity=?, progress=? WHERE id=?", orderPatchSignals.NewCustomerId, orderPatchSignals.NewProductId, orderPatchSignals.NewQuantity, orderPatchSignals.NewProgress, r.FormValue("id"))
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
@@ -784,12 +801,12 @@ func searchOrders(w http.ResponseWriter, r *http.Request) {
 		defer rows.Close()
 		var results []Order
 		for rows.Next() {
-			var order_field Order
-			if err := rows.Scan(&order_field.Id, &order_field.CustomerId, &order_field.ProductId, &order_field.Quantity, &order_field.Total, &order_field.Progress); err != nil {
+			var orderFields Order
+			if err := rows.Scan(&orderFields.Id, &orderFields.CustomerId, &orderFields.ProductId, &orderFields.Quantity, &orderFields.Total, &orderFields.Progress); err != nil {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
 			}
-			results = append(results, order_field)
+			results = append(results, orderFields)
 		}
 		if err := rows.Err(); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -832,13 +849,11 @@ func searchOrders(w http.ResponseWriter, r *http.Request) {
 }
 
 func editOrder(w http.ResponseWriter, r *http.Request) {
-	signals := &Order{}
-	if err := datastar.ReadSignals(r, signals); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+	type OrderRow struct {
+			Order Order `json:"row1"`
 	}
-	signalsToBePatched := &OrderPatch{}
-	if err := datastar.ReadSignals(r, signalsToBePatched); err != nil {
+	signals := &OrderRow{}
+	if err := datastar.ReadSignals(r, signals); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -847,44 +862,47 @@ func editOrder(w http.ResponseWriter, r *http.Request) {
 		<tr id="row-%v">
 			<td>%v</td>
 			<td><input name="new-customer-id" type="number" value="%v" data-bind:new-customer-id required>
-			<td><input name="new-product-id" type="number" value="%v" min="1" max="5" data-bind:new-product-id required></td>
+			<td><input name="new-product-id" type="number" value="%v" data-bind:new-product-id required></td>
 			<td><input name="new-quantity" type="text" value="%v" data-bind:new-quantity required></td>
 			<td>%v</td>
 			<td>
-				<select data-bind:new-progress>
+				<select name="new-progress" data-bind:new-progress>
+					<option value="%v">keep original</option>
 					<option value="received">received</option>
-					<option value="in progress">in progress</option>
+					<option value="in-progress">in progress</option>
 					<option value="delivered">delivered</option>
 				</select>
 			</td>
+			<td><input name="new-order-date" type="date" value="%v" data-bind:new-order-date required></td>
 			<td><button data-on:click="@get('/orders')">Cancel</button></td>
 			<td><button data-on:click="@patch('/orders?id=%v')">Update</button></td>
 		</tr>
-		`, r.FormValue("id"), signals.CustomerId, signals.ProductId, signals.Id))
+		`, r.FormValue("id"), signals.Order.Id, signals.Order.CustomerId, signals.Order.ProductId, signals.Order.Quantity, signals.Order.Total, signals.Order.Progress, signals.Order.OrderDate, r.FormValue("id")))
 }
 
 func reviews(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
-		signals := &Review{}
-		if err := datastar.ReadSignals(r, signals); err != nil {
+		reviewSignals := &Review{}
+		if err := datastar.ReadSignals(r, reviewSignals); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
+		pageSignals := &Pagination{}
 		rows, err := db.Query("SELECT * FROM reviews")
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 		defer rows.Close()
-		var review_data []Review
+		var reviewRecords []Review
 		for rows.Next() {
-			var review_field Review
-			if err := rows.Scan(&review_field.OrderId, &review_field.Rating, &review_field.Review); err != nil {
+			var reviewFields Review
+			if err := rows.Scan(&reviewFields.OrderId, &reviewFields.Rating, &reviewFields.Review); err != nil {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
 			}
-			review_data = append(review_data, review_field)
+			reviewRecords = append(reviewRecords, reviewFields)
 		}
 		if err := rows.Err(); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -896,9 +914,9 @@ func reviews(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		t := template.Must(template.ParseFiles("templates/base.html", "templates/reviews.html"))
-		ipp := max(5, signals.ItemsPerPage)
-		pn := max(1, signals.PageNumber)
-		page := review_data[ipp*(min(pn-1, len(review_data)/ipp)) : min(pn*ipp, len(review_data))]
+		ipp := max(5, pageSignals.ItemsPerPage)
+		pn := max(1, pageSignals.PageNumber)
+		page := reviewRecords[ipp*(min(pn-1, len(reviewRecords)/ipp)) : min(pn*ipp, len(reviewRecords))]
 		t.Execute(w, map[string]interface{}{
 			"data": page,
 		})
@@ -925,23 +943,6 @@ func reviews(w http.ResponseWriter, r *http.Request) {
 		}
 		sse := datastar.NewSSE(w, r)
 		sse.Redirect("/reviews")
-	case "PATCH":
-		signals := &Review{}
-		if err := datastar.ReadSignals(r, signals); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		sse := datastar.NewSSE(w, r)
-		result, err := db.Exec("UPDATE reviews SET order_id=?, rating=?, review=? WHERE order_id=?", signals.NewOrderId, signals.NewRating, signals.NewReview, r.FormValue("id"))
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		id, err := result.LastInsertId()
-		if err != nil {
-			fmt.Errorf("error: %v, %v", id, err)
-		}
-		sse.Redirect("/reviews")
 	}
 }
 
@@ -967,12 +968,12 @@ func searchReviews(w http.ResponseWriter, r *http.Request) {
 		defer rows.Close()
 		var results []Review
 		for rows.Next() {
-			var review_field Review
-			if err := rows.Scan(&review_field.OrderId, &review_field.Rating, &review_field.Review); err != nil {
+			var reviewFields Review
+			if err := rows.Scan(&reviewFields.OrderId, &reviewFields.Rating, &reviewFields.Review); err != nil {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
 			}
-			results = append(results, review_field)
+			results = append(results, reviewFields)
 		}
 		if err := rows.Err(); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -1011,30 +1012,35 @@ func searchReviews(w http.ResponseWriter, r *http.Request) {
 		sse.PatchElements(searchResult)
 }
 
-func editReview(w http.ResponseWriter, r *http.Request) {
-	signals := &Review{}
-	if err := datastar.ReadSignals(r, signals); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	sse := datastar.NewSSE(w, r)
-	sse.PatchElements(fmt.Sprintf(`
-		<tr id="row-%v">
-			<td>%v</td>
-			<td><input name="new-order-id" type="number" value="%v" data-bind:order-id required>
-			<td><input name="new-rating" type="number" value="%v" min="1" max="5" data-bind:rating required></td>
-			<td><input name="new-review" type="text" value="%v" data-bind:review required></td>
-			<td><button data-on:click="@get('/orders')">Cancel</button></td>
-			<td><button data-on:click="@patch('/orders?id=%v')">Update</button></td>
-		</tr>
-		`, signals.NewOrderId, signals.NewRating, signals.NewReview, signals.OrderId))
-}
+// func editReview(w http.ResponseWriter, r *http.Request) {
+// 	signals := &Review{}
+// 	if err := datastar.ReadSignals(r, signals); err != nil {
+// 		http.Error(w, err.Error(), http.StatusBadRequest)
+// 		return
+// 	}
+// 	sse := datastar.NewSSE(w, r)
+// 	sse.PatchElements(fmt.Sprintf(`
+// 		<tr id="row-%v">
+// 			<td>%v</td>
+// 			<td><input name="new-order-id" type="number" value="%v" data-bind:order-id required>
+// 			<td><input name="new-rating" type="number" value="%v" min="1" max="5" data-bind:rating required></td>
+// 			<td><input name="new-review" type="text" value="%v" data-bind:review required></td>
+// 			<td><button data-on:click="@get('/orders')">Cancel</button></td>
+// 			<td><button data-on:click="@patch('/orders?id=%v')">Update</button></td>
+// 		</tr>
+// 		`, signals.NewOrderId, signals.NewRating, signals.NewReview, signals.OrderId))
+// }
 
 func finances(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
-		transactionSignals := &Transactions{}
-		if err := datastar.ReadSignals(r, signals); err != nil {
+		transactionSignals := &Transaction{}
+		if err := datastar.ReadSignals(r, transactionSignals); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		pageSignals := &Pagination{}
+		if err := datastar.ReadSignals(r, pageSignals); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -1044,44 +1050,75 @@ func finances(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		defer rows.Close()
-		var balance_sheet_data []BalanceSheets
-		var cash_flow_statement_data []CashFlowStatements
-		var income_statement_data []IncomeStatements
+		var balanceSheetRecords []BalanceSheets
+		var cashFlowStatementRecords []CashFlowStatements
+		var incomeStatementRecords []IncomeStatements
 		for rows.Next() {
-			var balance_sheet_field []BalanceSheets
-			var cash_flow_statement_field []CashFlowStatements
-			var income_statement_field []IncomeStatements
-			if err := rows.Scan(
-				&balance_sheet_field.TimePeriod, &balance_sheet_field.Cash, &balance_sheet_field.AccountsReceivable, &balance_sheet_field.PrepaidExpenses, &balance_sheet_field.Inventory, &balance_sheet_field.PropertyAndEquipment, &balance_sheet_field.Goodwill, &balance_sheet_field.AccountsPayable, &balance_sheet_field.AccruedExpenses, &balance_sheet_field.UnearnedRevenue, &balance_sheet_field.LongTermDebt, &cash_flow_statement_field.TimePeriod, &cash_flow_statement_field.OperatingCashFlow, &cash_flow_statement_field.TotalSales, &cash_flow_statement_field.CashSpentOnAssets, &cash_flow_statement_field.OperatingExpenses,
-				&income_statement_field.TimePeriod, &income_statement_field.TotalSales, &income_statement_field.CostOfGoodsSold, &income_statement_field.Profit, &income_statement_field.PromotionExpenses, &income_statement_field.SellingGeneralAdministraticeExpenses, &income_statement_field.DepreciationAndAmoritization,
-			); err != nil {
+			var balanceSheetFields BalanceSheets
+			var cashFlowStatementFields CashFlowStatements
+			var incomeStatementFields IncomeStatements
+			if err := rows.Scan(&balanceSheetFields.TimePeriod, &balanceSheetFields.Cash, &balanceSheetFields.AccountsReceivable, &balanceSheetFields.PrepaidExpenses, &balanceSheetFields.Inventory, &balanceSheetFields.PropertyAndEquipment, &balanceSheetFields.Goodwill, &balanceSheetFields.AccountsPayable, &balanceSheetFields.AccruedExpenses, &balanceSheetFields.UnearnedRevenue, &balanceSheetFields.LongTermDebt, &cashFlowStatementFields.TimePeriod, &cashFlowStatementFields.OperatingCashFlow, &cashFlowStatementFields.TotalSales, &cashFlowStatementFields.CashSpentOnAssets, &cashFlowStatementFields.OperatingExpenses,&incomeStatementFields.TimePeriod, &incomeStatementFields.TotalSales, &incomeStatementFields.CostOfGoodsSold, &incomeStatementFields.Profit, &incomeStatementFields.PromotionExpenses, &incomeStatementFields.SellingAndGeneralAdministrativeExpenses, &incomeStatementFields.DepreciationAndAmoritization,); err != nil {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
 			}
-			balance_sheet_data = append(balance_sheet_data, balance_sheet_field)
-			cash_flow_statement_data = append(cash_flow_statement_data, cash_flow_statement_field)
-			income_statement_data = append(income_statement_data, income_statement_field)
+			balanceSheetRecords = append(balanceSheetRecords, balanceSheetFields)
+			cashFlowStatementRecords = append(cashFlowStatementRecords, cashFlowStatementFields)
+			incomeStatementRecords = append(incomeStatementRecords, incomeStatementFields)
 		}
 		if err := rows.Err(); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 		err = rows.Close()
-		if rowErr != nil {
+		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		rows, err := db.Query("SELECT * FROM transactions")
+		rows, err = db.Query("SELECT * FROM transactions")
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 		defer rows.Close()
-		var transaction_data []Transaction
-		for rows.Next(){
-			var transaction_field Transaction
-			if err := rows.Scan(&transaction_field.Id, &transaction_field.Counterparty, &transaction_field.TransactionDate, &transaction_field.Amount, &transaction_field.AccountType, &transaction_field.Category, )
+		var transactionRecords []Transaction
+		for rows.Next() {
+			var transactionFields Transaction
+			if err := rows.Scan(&transactionFields.Id, &transactionFields.Counterparty, &transactionFields.TransactionDate, &transactionFields.Amount, &transactionFields.AccountType, &transactionFields.Category, &transactionFields.Notes); err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			transactionRecords = append(transactionRecords, transactionFields)
 		}
+		if err := rows.Err(); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		err = rows.Close()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		t := template.Must(template.ParseFiles("templates/finances.html"))
+		ipp := max(5, pageSignals.ItemsPerPage)
+		pn := max(1, pageSignals.PageNumber)
+		transactionPage := transactionRecords[ipp*(min(pn-1, len(transactionRecords)/ipp)) : min(pn*ipp, len(transactionRecords))]
+		t.Execute(w, map[string]interface{}{
+			"transactionPage": transactionPage,
+			"incomeStatements": incomeStatementRecords,
+			"balanceSheets": balanceSheetRecords,
+			"cashFlowStatements": cashFlowStatementRecords,
+		})
+		case "POST":
+		result, err := db.Exec("INSERT INTO transactions (counterparty, transaction_date, amount, account_type, category, notes) VALUES (?, ?, ?, ?, ?, ?)", r.FormValue("counterparty"), r.FormValue("transaction-date"), r.FormValue("amount"), r.FormValue("account-type"), r.FormValue("category"), r.FormValue("notes"))
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		id, err := result.LastInsertId()
+		if err != nil {
+			fmt.Errorf("error: %v, %v", id, err)
+		}
+		http.Redirect(w, r, "/", http.StatusFound)
 	}
 }
 
@@ -1129,7 +1166,9 @@ func main() {
 
 	http.HandleFunc("/reviews", reviews)
 	http.HandleFunc("/reviews/search", searchReviews)
-	http.HandleFunc("/reviews/edit", editReview)
+	// http.HandleFunc("/reviews/edit", editReview)
+
+	http.HandleFunc("/finances", finances)
 
 	log.Fatal(http.ListenAndServe("localhost:8080", nil))
 }

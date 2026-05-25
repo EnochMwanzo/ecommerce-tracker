@@ -16,27 +16,27 @@
 <th>Quantity</th>
 <th>Total</th>
 <th>Progress</th>
+<th>Order Date</th>
 {{end}}
 
 {{define "tableData"}}
     {{range .data}}
-    <tr id="row-{{.Id}}">
-        <td data-signals:order-id>{{.Id}}</td>
-        <td data-bind:customer-id>{{.CustomerId}}</td>
-        <td data-bind:product-id>{{.ProductId}}</td>
-        <td data-bind:quantity>{{.Quantity}}</td>
-        <td data-bind:total>{{.Total}}</td>
-        <td data-bind:progress>{{.Progress}}</td>
+    <tr id="row-{{.Id}}" data-signals="{row{{.Id}}: {'id': {{.Id}}, 'customerId': {{.CustomerId}}, 'productId': {{.ProductId}}, 'quantity': {{.Quantity}}, 'total': {{.Total}}, 'progress': '{{.Progress}}', 'orderDate': '{{.OrderDate}}' }}">
+        <td data-text="$row{{.Id}}.id"></td>
+        <td data-text="$row{{.Id}}.customerId"></td>
+        <td data-text="$row{{.Id}}.productId"></td>
+        <td data-text="$row{{.Id}}.quantity"></td>
+        <td data-text="$row{{.Id}}.total"></td>
+        <td data-text="$row{{.Id}}.progress"></td>
+        <td data-text="$row{{.Id}}.orderDate"></td>
         <td>
-            <button
-                data-on:click="confirm('Are you sure?') && @delete('/orders?id={{.Id}}')"
-            >
+            <button data-on:click="confirm('Are you sure?') && @delete('/orders?id={{.Id}}')">
                 Delete
             </button>
         </td>
-        <td>
-            <button data-on:click="@patch('/orders/edit?id={{.Id}}')">Edit</button>
-        </td>
+        <td><button data-on:click="@patch('/orders/edit?id={{.Id}}')">
+            Edit
+        </button></td>
     </tr>
     {{end}}
 {{end}}

@@ -17,18 +17,20 @@
 <th>Start Date</th>
 <th>Phone</th>
 <th>Company Email</th>
+<th>Salary</th>
 {{end}}
 
 {{define "tableData"}}
     {{range .data}}
-    <tr id="row-{{.ID}}">
-        <td data-bind:id>{{.Id}}</td>
-        <td data-bind:employee-name>{{.EmployeeName}}</td>
-        <td data-bind:job-title>{{.JobTitle}}</td>
-        <td data-bind:department>{{.Department}}</td>
-        <td data-bind:start-date>{{.StartDate}}</td>
-        <td data-bind:phone>{{.Phone}}</td>
-        <td data-bind:company-email>{{.CompanyEmail}}</td>
+    <tr id="row-{{.Id}}" data-signals="{row{{.Id}}: {'id': {{.Id}}, 'employeeName': '{{.EmployeeName}}', 'jobTitle': '{{.JobTitle}}', 'department': '{{.Department}}', 'startDate': '{{.StartDate}}', 'phone': '{{.Phone}}', 'email': '{{.Email}}', 'salary': {{.Salary}} } }">
+        <td data-text="$row{{.Id}}.id"></td>
+        <td data-text="$row{{.Id}}.employeeName"></td>
+        <td data-text="$row{{.Id}}.jobTitle"></td>
+        <td data-text="$row{{.Id}}.department"></td>
+        <td data-text="$row{{.Id}}.startDate"></td>
+        <td data-text="$row{{.Id}}.phone"></td>
+        <td data-text="$row{{.Id}}.email"></td>
+        <td data-text="$row{{.Id}}.salary"></td>
         <td>
             <button
                 data-on:click="confirm('Are you sure?') && @delete('/employees?id={{.Id}}')"
@@ -52,6 +54,6 @@
 <input id="department" type="text" name="department" required /><br />
 <label for="phone">Phone</label>
 <input id="phone" type="tel" name="phone" required /><br />
-<label for="company-email">Company Email</label>
-<input id="company-email" type="email" name="company-email" required />
+<label for="email">Company Email</label>
+<input id="email" type="email" name="email" required />
 {{end}}

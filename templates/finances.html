@@ -16,7 +16,7 @@
             --dark-bg-color: darkslategrey
         }
         body {
-            background-color: var(--main-bg-color);
+            background-color: lightblue;
             margin: 0 auto;
             text-align: center;
             font-family: sans-serif
@@ -27,6 +27,12 @@
             text-align: center;
             margin: 0 auto;
         }
+
+        th {
+            max-width: 6em;
+            padding: 1em
+        }
+
         td {
             border: 1px solid;
             padding: 1em;
@@ -112,9 +118,10 @@
                         <td>{{.cashSpentOnAssets}}</td>
                         <td>{{.operatingExpenses}}</td>
                     </tr>
+                    {{end}}
                 </tbody>
             </table>
-            <h2>Income</h2>
+            <h2>Income Statements</h2>
             <table>
                 <thead>
                     <tr>
@@ -138,6 +145,7 @@
                         <td>{{.SellingGeneralAdministraticeExpenses}}</td>
                         <td>{{.DepreciationAndAmoritization}}
                     </tr>
+                    {{end}}
                 </tbody>
             </table>
             <h2>Balance Sheet</h2>
@@ -158,7 +166,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {{range .incomeStatements}}
+                    {{range .balanceSheets}}
                     <tr>
                         <td>{{.TimePeriod}}</td>
                         <td>{{.Cash}}</td>
@@ -172,6 +180,7 @@
                         <td>{{.UnearnedRevenue}}</td>
                         <td>{{.LongTermDebt}}</td>
                     </tr>
+                    {{end}}
                 </tbody>
             </table>
             <h2>Transactions</h2>
@@ -184,19 +193,36 @@
                         <th>Amount</th>
                         <th>Account Type</th>
                         <th>Category</th>
+                        <th>Notes</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {{range .transactions}}
-                    <tr>
-                        {{.Counterparty}}
-                        {{.TransactionDate}}
-                        {{.Amount}}
-                        {{.AccountType}}
-                        {{.Category}}
+                    {{range .transactionPage}}
+                    <tr id="row-{{.Id}}">
+                        <td>{{.Id}}</td>
+                        <td>{{.Counterparty}}</td>
+                        <td>{{.TransactionDate}}</td>
+                        <td>{{.Amount}}</td>
+                        <td>{{.AccountType}}</td>
+                        <td>{{.Category}}</td>
+                        <td>{{.Notes}}</td>
                     </tr>
+                    {{end}}
                 </tbody>
             </table>
+            <h2>Add a Transactions</h2>
+            <form method="POST" action="/finances">
+                <input id="counterparty" type="text">
+                <input id="transaction-date" type="date">
+                <input id="amount" type="number">
+                <select id="account-type">
+                    <option></option>
+                </select>
+                <select id="category">
+                    <option></option>
+                </select>
+                <input type="submit" value="Submit" />
+            </form>
         </main>
         <footer>
         </footer>

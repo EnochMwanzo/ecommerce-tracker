@@ -13,28 +13,29 @@
 <th>Subscriber</th>
 <th>Cohort</th>
 <th>Sign Up Date</th>
-{{end}} {{define "tableData"}} {{range .data}}
-<tr
-    id="row-{{.id}}"
-    data-signals="{id: {{.id}}, customer-name: {{.CustomerName}}, subscriber: {{.Subscriber}},cohort: {{.Cohort}}, signup-date: {{.SignupDate}}}"
->
-    <td data-text="$id"></td>
-    <td data-text="$customer-name"></td>
-    <td data-text="$subscriber"></td>
-    <td data-text="$cohort"></td>
-    <td data-text="$signup-date"></td>
-    <td>
-        <button
-            data-on:click="confirm('Are you sure?') && @delete('/customers?id={{.Id}}')"
-        >
-            Delete
-        </button>
-    </td>
-    <td>
-        <button data-on:click="@get('/customers/edit?id={{.Id}}')">Edit</button>
-    </td>
-</tr>
-{{end}} {{end}} {{define "addResourceInputs"}}
+{{end}}
+{{define "tableData"}}
+    {{range .data}}
+    <tr id="row-{{.Id}}" data-signals="{row{{.Id}}: {'id': {{.Id}}, 'customerName': '{{.CustomerName}}', 'subscriber': {{.Subscriber}}, 'cohort': '{{.Cohort}}', 'signupDate': '{{.SignupDate}}' }}">
+        <td data-text="$row{{.Id}}.id"></td>
+        <td data-text="$row{{.Id}}.customerName"></td>
+        <td data-text="$row{{.Id}}.subscriber"></td>
+        <td data-text="$row{{.Id}}.cohort"></td>
+        <td data-text="$row{{.Id}}.signupDate"></td>
+        <td>
+            <button
+                data-on:click="confirm('Are you sure?') && @delete('/customers?id={{.Id}}')"
+            >
+                Delete
+            </button>
+        </td>
+        <td>
+            <button data-on:click="@get('/customers/edit?id=row-{{.Id}}')">Edit</button>
+        </td>
+    </tr>
+    {{end}}
+{{end}}
+{{define "addResourceInputs"}}
 <label for="customer-name">Customer Name</label>
 <input id="customer-name" type="text" name="customer-name" required /><br>
 <label for="subscriber">Subscriber</label>

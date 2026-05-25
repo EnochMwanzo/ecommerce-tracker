@@ -8,17 +8,27 @@
 {{end}}
 
 {{define "tableHeaders"}}
-<th>id</th>
-<th>product name</th>
-<th>description</th>
+<th>ID</th>
+<th>Product Name</th>
+<th>Description</th>
+<th>Stock at Warehouse</th>
+<th>Stock at Manufacturer</th>
+<th>Price</th>
+<th>Reorder Point</th>
+<th>Lead Time Days</th>
 {{end}}
 
 {{define "tableData"}}
     {{range .data}}
-    <tr id="row-{{.Id}}">
-        <td data-bind:product-id>{{.Id}}</td>
-        <td data-bind:product-name>{{.ProductName}}</td>
-        <td data-bind:product-description>{{.Description}}</td>
+    <tr id="row-{{.Id}}" data-signals="{row{{.Id}}: {'id': {{.Id}}, 'productName': '{{.ProductName}}', 'description': '{{.Description}}', 'stockAtWarehouse': {{.StockAtWarehouse}}, 'stockAtManufacturer': {{.StockAtManufacturer}}, 'price': {{.Price}}, 'reorderPoint': {{.ReorderPoint}}, 'leadTimeDays': {{.LeadTimeDays}} } }">
+        <td data-text="$row{{.Id}}.id"></td>
+        <td data-text="$row{{.Id}}.productName"></td>
+        <td data-text="$row{{.Id}}.description"></td>
+        <td data-text="$row{{.Id}}.stockAtWarehouse"></td>
+        <td data-text="$row{{.Id}}.stockAtManufacturer"></td>
+        <td data-text="$row{{.Id}}.price"></td>
+        <td data-text="$row{{.Id}}.reorderPoint"></td>
+        <td data-text="$row{{.Id}}.leadTimeDays"></td>
         <td>
             <button
                 data-on:click="confirm('Are you sure?') && @delete('/products?id={{.Id}}')"
@@ -27,14 +37,24 @@
             </button>
         </td>
         <td>
-            <button data-on:click="@get('/products/edit?id={{.Id}}">Edit</button>
+            <button data-on:click="@get('/products/edit?id=row-{{.Id}}')">Edit</button>
         </td>
     </tr>
     {{end}}
 {{end}}
 {{define "addResourceInputs"}}
-<label for="product-name">product name</label>
-<input id="product-name" type="text" name="product-name" required /><br />
-<label for="description">product description</label>
-<input id="description" type="text" name="description" required /><br>
+<div class="add-record-form-label">
+    <label for="product-name">product name</label><br>
+    <label for="description">product description</label><br>
+    <label for="price">price</label><br>
+    <label for="stock-at-warehouse">stock at warehouse</label><br>
+    <label for="stock-at-manufacturer">stock at manufacturer</label>
+</div>
+<div class="add-record-form-input">
+    <input id="product-name" type="text" name="product-name" required /><br>
+    <input id="description" type="text" name="description" required /><br>
+    <input id="price" type="number" name="price" step="0.01" required /><br>
+    <input id="stock-at-warehouse" type="number" name="stock-at-warehouse" required /><br>
+    <input id="stock-at-manufacturer" type="number" name="stock-at-manufacturer" required />
+</div>
 {{end}}
