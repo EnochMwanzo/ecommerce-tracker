@@ -3,3 +3,6 @@ config.ini
 Caddyfile
 notes.txt
 .zed
+fullchain.pem
+privkey.pem
+certbot

@@ -12,97 +12,14 @@
             src="https://cdn.jsdelivr.net/gh/starfederation/datastar@1.0.0-RC.8/bundles/datastar.js"
         ></script>
         <style>
-        :root {
-            --light-bg-color: lightblue
-            --dark-bg-color: darkslategrey
-        }
-        body {
-            background-color: lightblue;
-            margin: 0 auto;
-            text-align: center;
-            font-family: sans-serif
-        }
-
-        table {
-            border: 1px solid;
-            text-align: center;
-            margin: 0 auto;
-        }
-
-        th {
-            max-width: 6em;
-            padding: 1em
-        }
-
-        td {
-            border: 1px solid;
-            padding: 1em;
-        }
-
-        nav {
-            background: turquoise;
-            margin: 0;
-        }
-
-        input {
-            margin: 1em 0;
-            align-items: center;
-        }
-
-        .navbar-item {
-            display: inline-flex;
-            flex-grow: 1;
-            padding: 1.5em 0.5em;
-        }
-
-        .navbar-item:hover {
-            background: darkblue;
-        }
-        a {
-            text-decoration: none;
-        }
-        a:hover {
-            color: white;
-            text-decoration: none;
-        }
-
-        @media (prefers-color-scheme: dark) {
-            body {
-                background: darkslategrey;
-                color: lightblue;
-            }
-            a:hover {
-                background: lightblue;
-                color: black;
-                text-decoration: none
-            }
-        }
-
-        .add-record-form {
-            display: table;
-            margin: 0 auto;
-        }
-
-        .add-record-form-label {
-            display: table-cell;
-            width: 50%;
-            text-align: right;
-            padding-right: 1em;
-        }
-        .add-record-form-label label {
-            line-height:3em;
-        }
-        .add-record-form-input {
-            display: table-cell;
-            width: 50%;
-            text-align: left;
-        }
+        {{block "styles" . }}
+        {{end}}
         </style>
     </head>
     <div>
     <body>
         <header>
-        <nav>
+        <nav class="page-links">
             <ul>
                 <a href="/customers"><li class="navbar-item">Customers</li></a>
                 <a href="/products"><li class="navbar-item">Products</li></a>
@@ -118,18 +35,6 @@
         <div class="wrapper">
         <main>
         <h1>{{block "resource" . }}{{end}}s</h1>
-            <input
-                id="search"
-                type="text"
-                placeholder="Search..."
-                data-bind:query
-                data-on:input__debounce.200ms="@get('/{{block "resource" .}}{{end}}s/search')"
-            />
-            <label for="search-by">search by</label>
-            <select id="search-by" data-bind:search-by>
-                {{block "searchFields" . }}
-                {{end}}
-            </select>
             <div style="line-height:1.5em;">&#8202;</div>
             <table>
                 <thead>
@@ -139,16 +44,10 @@
                 </thead>
                 <tbody>
                     {{block "tableData" . }}{{end}}
-
                 </tbody>
             </table>
+            {{block "extra" . }}{{end}}
             <p>Pages</p>
-            <div class="page-number">
-                <label for="page-number">page number</label>
-                <input type="number" id="page-number" min="1" data-bind:page-number data-on:input__debounce.1000ms="@get('/{{block "resource" .}}{{end}}/search')" value="1">
-            </div>
-            <label for="items-per-page">items per page</label>
-            <input id="items-per-page" type="number"  min="5" data-bind:items-per-page data-on:input__debounce.1000ms="@get('/{{block "resource" .}}{{end}}/search')" value="5">
             <h2>Add a {{block "resource" . }}{{end}}</h2>
             <form method="POST" action="/{{block "resource" .}}{{end}}s">
                 <div class="add-record-form">

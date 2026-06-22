@@ -1,60 +1,291 @@
-{{define "title"}}Products{{end}}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+      Products
+    </title>
+    <script
+      type="module"
+      src="https://cdn.jsdelivr.net/gh/starfederation/datastar@1.0.0-RC.8/bundles/datastar.js"
+    ></script>
+    <style>
+    body {
+        --light-bg-color: lightblue;
+        --dark-bg-color: darkslategrey;
+    }
+    body {
+        background-color: lightblue;
+        margin: 0 auto;
+        text-align: center;
+        font-family: sans-serif;
+    }
 
-{{define "resource"}}product{{end}}
+    table {
+        border: 1px solid;
+        text-align: center;
+        margin: 0 auto;
+    }
 
-{{define "searchFields"}}
-<option value="product-name">Product Name</option>
-<option value="description">Description</option>
-{{end}}
+    th {
+        max-width: 6em;
+        padding: 1em;
+    }
 
-{{define "tableHeaders"}}
-<th>ID</th>
-<th>Product Name</th>
-<th>Description</th>
-<th>Stock at Warehouse</th>
-<th>Stock at Manufacturer</th>
-<th>Price</th>
-<th>Reorder Point</th>
-<th>Lead Time Days</th>
-{{end}}
+    td {
+        border: 1px solid;
+        padding: 1em;
+    }
 
-{{define "tableData"}}
-    {{range .data}}
-    <tr id="row-{{.Id}}" data-signals="{row{{.Id}}: {'id': {{.Id}}, 'productName': '{{.ProductName}}', 'description': '{{.Description}}', 'stockAtWarehouse': {{.StockAtWarehouse}}, 'stockAtManufacturer': {{.StockAtManufacturer}}, 'price': {{.Price}}, 'reorderPoint': {{.ReorderPoint}}, 'leadTimeDays': {{.LeadTimeDays}} } }">
-        <td data-text="$row{{.Id}}.id"></td>
-        <td data-text="$row{{.Id}}.productName"></td>
-        <td data-text="$row{{.Id}}.description"></td>
-        <td data-text="$row{{.Id}}.stockAtWarehouse"></td>
-        <td data-text="$row{{.Id}}.stockAtManufacturer"></td>
-        <td data-text="$row{{.Id}}.price"></td>
-        <td data-text="$row{{.Id}}.reorderPoint"></td>
-        <td data-text="$row{{.Id}}.leadTimeDays"></td>
-        <td>
-            <button
-                data-on:click="confirm('Are you sure?') && @delete('/products?id={{.Id}}')"
-            >
+    .page-links {
+        background: turquoise;
+        margin: 0;
+    }
+
+    input {
+        margin: 1em 0;
+        align-items: center;
+    }
+
+    .navbar-item {
+        display: inline-flex;
+        flex-grow: 1;
+        padding: 1.5em 0.5em;
+    }
+
+    .navbar-item:hover {
+        background: darkblue;
+    }
+
+    .add-record-form {
+        border: 1px solid;
+    }
+
+    a {
+        text-decoration: none;
+    }
+    a:hover {
+        color: white;
+        text-decoration: none;
+    }
+
+    @media (prefers-color-scheme: dark) {
+        body {
+            background: darkslategrey;
+            color: lightblue;
+        }
+        a:hover {
+            background: lightblue;
+            color: black;
+            text-decoration: none;
+        }
+        .navbar-item:hover {
+            background: lightblue;
+        }
+    }
+
+    .add-record-form {
+        display: table;
+        margin: 0 auto;
+        padding: 1em;
+    }
+
+    .add-record-form-label {
+        display: table-cell;
+        width: 50%;
+        text-align: right;
+        padding-right: 1em;
+    }
+    .add-record-form-label label {
+        line-height: 3em;
+    }
+    .add-record-form-input {
+        display: table-cell;
+        width: 50%;
+        text-align: left;
+    }
+
+    form select {
+        margin: 1em 0;
+    }
+    .debit-account {
+        position: relative;
+        bottom: 0.7em;
+        border: none;
+    }
+
+    .credit-account {
+        position: relative;
+        top: 0.7em;
+        border: none;
+    }
+
+    .debit {
+        position: relative;
+        bottom: 0.7em;
+        border: none;
+    }
+
+    .credit {
+        position: relative;
+        top: 0.7em;
+        border: none;
+    }
+    </style>
+  </head>
+  <body>
+    <header>
+    <nav class="page-links">
+      <ul>
+        <a href="/customers"><li class="navbar-item">Customers</li></a>
+        <a href="/products"><li class="navbar-item">Products</li></a>
+        <a href="/employees"><li class="navbar-item">Employees</li></a>
+        <a href="/orders"><li class="navbar-item">Orders</li></a>
+        <a href="/reviews"><li class="navbar-item">Reviews</li></a>
+        <a href="/finances"><li class="navbar-item">Finances</li></a>
+      </ul>
+    </nav>
+    </header>
+    <div class="wrapper">
+    <main>
+      <h1>Products</h1>
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Product Name</th>
+            <th>Description</th>
+            <th>Stock at Warehouse</th>
+            <th>Stock at Manufacturer</th>
+            <th>Price</th>
+            <th>Reorder Point</th>
+            <th>Lead Time Days</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for i in productRecords %}
+          <tr id="row-{{i.Id}}" data-signals="{row{{i.Id}}: {'id': {{i.Id}}, 'productName': '{{i.ProductName}}', 'description': '{{i.Description}}', 'stockAtWarehouse': {{i.StockAtWarehouse}}, 'stockAtManufacturer': {{i.StockAtManufacturer}}, 'price': {{i.Price|round(2)}}, 'reorderPoint': {{i.ReorderPoint}}, 'leadTimeDays': {{i.LeadTimeDays}} } }">
+            <td data-text="$row{{i.Id}}.id"></td>
+            <td data-text="$row{{i.Id}}.productName"></td>
+            <td data-text="$row{{i.Id}}.description"></td>
+            <td data-text="$row{{i.Id}}.stockAtWarehouse"></td>
+            <td data-text="$row{{i.Id}}.stockAtManufacturer"></td>
+            <td data-text="$row{{i.Id}}.price"></td>
+            <td data-text="$row{{i.Id}}.reorderPoint"></td>
+            <td data-text="$row{{i.Id}}.leadTimeDays"></td>
+            <td>
+              <button
+                data-on:click="confirm('Are you sure?') && @delete('/products?id={{i.Id}}')"
+              >
                 Delete
-            </button>
-        </td>
-        <td>
-            <button data-on:click="@get('/products/edit?id=row-{{.Id}}')">Edit</button>
-        </td>
-    </tr>
-    {{end}}
-{{end}}
-{{define "addResourceInputs"}}
-<div class="add-record-form-label">
-    <label for="product-name">product name</label><br>
-    <label for="description">product description</label><br>
-    <label for="price">price</label><br>
-    <label for="stock-at-warehouse">stock at warehouse</label><br>
-    <label for="stock-at-manufacturer">stock at manufacturer</label>
-</div>
-<div class="add-record-form-input">
-    <input id="product-name" type="text" name="product-name" required /><br>
-    <input id="description" type="text" name="description" required /><br>
-    <input id="price" type="number" name="price" step="0.01" required /><br>
-    <input id="stock-at-warehouse" type="number" name="stock-at-warehouse" required /><br>
-    <input id="stock-at-manufacturer" type="number" name="stock-at-manufacturer" required />
-</div>
-{{end}}
+              </button>
+            </td>
+            <td>
+              <button data-on:click="@get('/products/edit?id=row-{{i.Id}}')">Edit</button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    <h2>Inventory Costing</h2>
+    <table>
+      <thead>
+      <tr>
+        <th>Date</th>
+        <th colspan="3">Purchases</th>
+        <th colspan="3">Cost of Goods Sold</th>
+        <th colspan="3">Inventory</th>
+      </tr>
+      <tr>
+        <th>Time Period</th>
+        <th>Quantity</th>
+        <th>Unit Cost</th>
+        <th>Total Cost</th>
+        <th>Quantity</th>
+        <th>Unit Cost</th>
+        <th>Total Cost</th>
+        <th>Quantity</th>
+        <th>Unit Cost</th>
+        <th>Total Cost</th>
+      </tr>
+      </thead>
+      <tbody>
+        {% for i in inventoryCosting %}
+        {% if i.InventoryType == 'Purchase' %}
+        <tr>
+          <td>{{i.TimePeriod}}</td>
+          <td>{{i.Quantity}}</td>
+          <td>{{i.UnitCost}}</td>
+          <td>{{i.Total}}</td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td>{{i.QuantityCount}}</td>
+          <td>{{i.UnitCost}}</td>
+          <td>{{i.TotalCount}}</td>
+        </tr>
+        {% elif i.InventoryType == 'Cost of Goods Sold' %}
+        <tr>
+          <td>{{i.TimePeriod}}</td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td>{{i.Quantity}}</td>
+          <td>{{i.UnitCost}}</td>
+          <td>{{i.Total}}</td>
+          <td>{{i.QuantityCount}}</td>
+          <td>{{i.UnitCost}}</td>
+          <td>{{i.TotalCount}}</td>
+        </tr>
+        {% endif %}
+        {% endfor %}
+      </tbody>
+    </table>
+    <h2>Add a Product</h2>
+    <form method="POST" action="/products?form=products">
+      <div class="add-record-form">
+        <div class="add-record-form-label">
+          <label for="product-name">product name</label><br>
+          <label for="description">product description</label><br>
+          <label for="price">price</label><br>
+          <label for="stock-at-warehouse">stock at warehouse</label><br>
+          <label for="stock-at-manufacturer">stock at manufacturer</label>
+        </div>
+        <div class="add-record-form-input">
+          <input id="product-name" type="text" name="product-name" required /><br>
+          <input id="description" type="text" name="description" required /><br>
+          <input id="price" type="number" name="price" step="0.01" required /><br>
+          <input id="stock-at-warehouse" type="number" name="stock-at-warehouse" required /><br>
+          <input id="stock-at-manufacturer" type="number" name="stock-at-manufacturer" required />
+        </div>
+      </div>
+      <input type="submit" value="Submit" />
+      </form>
+      <h2>Enter Inventory Costs</h2>
+      <form method="POST" action="/products">
+        <div class="add-record-form">
+          <div class="add-record-form-label">
+            <label for="time-period">Time Period</label><br>
+            <label for="inventory-type">Inventory Type</label><br>
+            <label for="quantity">Quantity</label><br>
+            <label for="unit-cost">Unit Cost</label>
+          </div>
+          <div class="add-record-form-input">
+            <input id="time-period" type="date" name="time-period" required /><br>
+            <select id="inventory-type" name="inventory-type">
+              <option value="1">Purchase</option>
+              <option value="2">Cost of Goods Sold</option>
+            </select><br>
+            <input id="quantity" type="number" name="quantity" required /><br>
+            <input id="unit-cost" type="number" name="unit-cost" required />
+          </div>
+        </div>
+        <input type="submit" value="Submit" />
+      </form>
+    </main>
+    <footer>
+    </footer>
+    </div>
+</body>
+</html>

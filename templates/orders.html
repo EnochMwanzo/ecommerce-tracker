@@ -34,7 +34,7 @@
                 Delete
             </button>
         </td>
-        <td><button data-on:click="@patch('/orders/edit?id={{.Id}}')">
+        <td><button data-signals="{rowBeingEdited: {'id': {{.Id}}, 'customerId': {{.CustomerId}}, 'productId': {{.ProductId}}, 'quantity': {{.Quantity}}, 'total': {{.Total}}, 'progress': '{{.Progress}}', 'orderDate': '{{.OrderDate}}' }}" data-on:click="@patch('/orders/edit?id={{.Id}}')">
             Edit
         </button></td>
     </tr>
@@ -50,8 +50,8 @@
 <input id="quantity" type="number" name="quantity" required /><br />
 <label for="progress">Progress</label>
 <select id="progress" name="progress">
-    <option value="received">Received</option>
-    <option value="in progress">In Progress</option>
-    <option value= "delivered">Delivered</option>
+    <option value="1">Received</option>
+    <option value="2">In Progress</option>
+    <option value= "3">Delivered</option>
 </select><br>
 {{end}}

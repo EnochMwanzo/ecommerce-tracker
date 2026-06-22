@@ -2,26 +2,25 @@
 
 {{define "resource"}}customer{{end}}
 
-{{define "searchFields"}}
-<option value="customer-name">Customer Name</option>
-<option value="subscriber">Subscriber</option>
-<option value="cohort">Cohort</option>
-{{end}}
+
 {{define "tableHeaders"}}
 <th>id</th>
 <th>Customer Name</th>
 <th>Subscriber</th>
 <th>Cohort</th>
 <th>Sign Up Date</th>
+<th>Lifetime Value</th>
 {{end}}
+
 {{define "tableData"}}
     {{range .data}}
-    <tr id="row-{{.Id}}" data-signals="{row{{.Id}}: {'id': {{.Id}}, 'customerName': '{{.CustomerName}}', 'subscriber': {{.Subscriber}}, 'cohort': '{{.Cohort}}', 'signupDate': '{{.SignupDate}}' }}">
+    <tr id="row-{{.Id}}" data-signals="{row{{.Id}}: {'id': {{.Id}}, 'customerName': '{{.CustomerName}}', 'subscriber': {{.Subscriber}}, 'cohort': '{{.Cohort}}', 'signupDate': '{{.SignupDate}}', 'lifetimeValue':{{.LifetimeValue}} }}">
         <td data-text="$row{{.Id}}.id"></td>
         <td data-text="$row{{.Id}}.customerName"></td>
         <td data-text="$row{{.Id}}.subscriber"></td>
         <td data-text="$row{{.Id}}.cohort"></td>
         <td data-text="$row{{.Id}}.signupDate"></td>
+        <td data-text="$row{{.Id}}.lifetimeValue"></td>
         <td>
             <button
                 data-on:click="confirm('Are you sure?') && @delete('/customers?id={{.Id}}')"
@@ -36,20 +35,24 @@
     {{end}}
 {{end}}
 {{define "addResourceInputs"}}
-<label for="customer-name">Customer Name</label>
-<input id="customer-name" type="text" name="customer-name" required /><br>
-<label for="subscriber">Subscriber</label>
-<select id="subscriber" name="subscriber">
-    <option value="0">False</option>
-    <option value="1">True</option>
-</select> <br>
-<label for="cohort">Review</label>
-<select id="cohort" name="cohort">
-    <option value="0">engaged prospect</option>
-    <option value="1">lapsed prospect</option>
-    <option value="2">one purchase</option>
-    <option value="3">two or more purchases</option>
-    <option value="4">VIP</option>
-    <option value="5">churned</option>
-</select><br>
+<div class="add-record-form-label">
+  <label for="customer-name">Customer Name</label><br>
+  <label for="subscriber">Subscriber</label><br>
+  <label for="cohort">Cohort</label><br>
+</div>
+<div class="add-record-form-input">
+  <input id="customer-name" type="text" name="customer-name" required /><br>
+  <select id="subscriber" name="subscriber">
+      <option value="0">False</option>
+      <option value="1">True</option>
+  </select> <br>
+  <select id="cohort" name="cohort">
+      <option value="1">engaged prospect</option>
+      <option value="2">lapsed prospect</option>
+      <option value="3">one purchase</option>
+      <option value="4">two or more purchases</option>
+      <option value="5">VIP</option>
+      <option value="6">churned</option>
+  </select><br>
+</div>
 {{end}}

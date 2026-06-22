@@ -4,22 +4,18 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>
-            Financials
+            Finances
         </title>
         <script
             type="module"
             src="https://cdn.jsdelivr.net/gh/starfederation/datastar@1.0.0-RC.8/bundles/datastar.js"
         ></script>
         <style>
-        :root {
-            --light-bg-color: lightblue
-            --dark-bg-color: darkslategrey
-        }
         body {
             background-color: lightblue;
             margin: 0 auto;
             text-align: center;
-            font-family: sans-serif
+            font-family: sans-serif;
         }
 
         table {
@@ -30,7 +26,7 @@
 
         th {
             max-width: 6em;
-            padding: 1em
+            padding: 1em;
         }
 
         td {
@@ -38,7 +34,7 @@
             padding: 1em;
         }
 
-        nav {
+        .page-links {
             background: turquoise;
             margin: 0;
         }
@@ -57,6 +53,11 @@
         .navbar-item:hover {
             background: darkblue;
         }
+
+        .add-record-form {
+            border: 1px solid;
+        }
+
         a {
             text-decoration: none;
         }
@@ -73,15 +74,68 @@
             a:hover {
                 background: lightblue;
                 color: black;
-                text-decoration: none
+                text-decoration: none;
+            }
+            .navbar-item:hover {
+                background: lightblue;
             }
         }
+
+        .add-record-form {
+            display: table;
+            margin: 0 auto;
+            padding: 1em;
+        }
+
+        .add-record-form-label {
+            display: table-cell;
+            width: 50%;
+            text-align: right;
+            padding-right: 1em;
+        }
+        .add-record-form-label label {
+            line-height: 3em;
+        }
+        .add-record-form-input {
+            display: table-cell;
+            width: 50%;
+            text-align: left;
+        }
+
+        .debit-account {
+            position: relative;
+            bottom: 0.7em;
+            border: none;
+        }
+
+        .credit-account {
+            position: relative;
+            top: 0.7em;
+            border: none;
+        }
+
+        .debit {
+            position: relative;
+            bottom: 0.7em;
+            border: none;
+        }
+
+        .credit {
+            position: relative;
+            top: 0.7em;
+            border: none;
+        }
+
+        .journal-entries-table tr {
+            padding: 1em;
+        }
         </style>
+        <link rel="stylesheet" href="/templates/styles.css">
     </head>
     <div>
     <body>
         <header>
-        <nav>
+        <nav class="page-links">
             <ul>
                 <a href="/customers"><li class="navbar-item">Customers</li></a>
                 <a href="/products"><li class="navbar-item">Products</li></a>
@@ -95,10 +149,82 @@
         </nav>
         </header>
         <div class="wrapper">
-        <main>
         <h1>Finances</h1>
             <div style="line-height:1.5em;">&#8202;</div>
-            <h2>Cash Flow</h2>
+            <div class="shortcuts">
+              <a href="#chart-of-accounts"><dl>Chart of Accounts</dl></a>
+              <a href="#general-ledger"><dl>General Ledger</dl></a>
+              <a href="#cash-flow-statement"><dl>Cash Flow Statement</dl></a>
+              <a href="#balance-sheet"><dl>Balance Sheets</dl></a>
+              <a href="#income-statement"><dl>Income Statements</dl></a>
+              <a href="#financial-ratios"><dl>Financial Ratios</dl></a>
+              <a href="#transactions"><dl>Transactions</dl></a>
+              <a href="#journal-entries"><dl>Journal Entries</dl></a>
+              <a href="#trial-balance"><dl>Trial Balance</dl></a>
+            </div>
+            <h2 id="chart-of-accounts">Chart of Accounts</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Account Code</th>
+                        <th>Account Name</th>
+                        <th>Account Type</th>
+                        <th>Financial Statement</th>
+                    </tr>
+                </thead>
+                <tbody>
+                  {% if chartOfAccounts %}
+                  {% for i in chartOfAccounts %}
+                    <tr>
+                        <td>{{i.AccountCode}}</td>
+                        <td>{{i.AccountName}}</td>
+                        <td>{{i.AccountType}}</td>
+                        <td>{{i.FinancialStatement}}</td>
+                    </tr>
+                    {% endfor %}
+                    <tr>
+                        <td>1030</td>
+                        <td>Inventory</td>
+                        <td>Asset</td>
+                        <td>Balance Sheet</td>
+                    </tr>
+                    <tr>
+                        <td>2001</td>
+                        <td>Accounts Payable</td>
+                        <td>Liability</td>
+                        <td>Balance Sheet</td>
+                    </tr>
+                  {% endif %}
+                </tbody>
+            </table>
+            <h2 id="general-ledger">General Ledger</h2>
+
+            <select>
+              {% for i in chartOfAccounts %}
+              <option data-on:click="@get('/finances?ledgerAccountCode={{i.AccountCode}})">{{i.AccountCode}} {{i.AccountName}}</option>
+              {% endfor %}
+            </select>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Account Code</th>
+                        <th>Account Name</th>
+                        <th>Journal Entry ID</th>
+                        <th>Balance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                  {% if generalLedger %}
+                    <tr>
+                        <td>{{generalLedger.AccountCode}}</td>
+                        <td>{{generalLedger.AccountName}}</td>
+                        <td>{{generalLedger.JournalEntryID}}</td>
+                        <td>{{generalLedger.Balance}}</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+            <h2 id="cash-flow-statement">Cash Flow</h2>
             <table>
                 <thead>
                     <tr>
@@ -110,18 +236,18 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {{range .cashFlowStatements}}
+                  {% if cashFlowStatement %}
                     <tr>
-                        <td>{{.timePeriod}}</td>
-                        <td>{{.operatingCashFlow}}</td>
-                        <td>{{.totalSales}}</td>
-                        <td>{{.cashSpentOnAssets}}</td>
-                        <td>{{.operatingExpenses}}</td>
+                        <td>{{cashFlowStatement.TimePeriod}}</td>
+                        <td>{{cashFlowStatement.OperatingCashFlow}}</td>
+                        <td>{{cashFlowStatement.TotalSales}}</td>
+                        <td>{{cashFlowStatement.CashSpentOnAssets}}</td>
+                        <td>{{cashFlowStatement.OperatingExpenses}}</td>
                     </tr>
-                    {{end}}
+                    {% endif %}
                 </tbody>
             </table>
-            <h2>Income Statements</h2>
+            <h2 id="income-statement">Income Statement</h2>
             <table>
                 <thead>
                     <tr>
@@ -135,20 +261,20 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {{range .incomeStatements}}
+                  {% if incomeStatement %}
                     <tr>
-                        <td>{{.TimePeriod}}</td>
-                        <td>{{.TotalSales}}</td>
-                        <td>{{.CostOfGoodsSold}}</td>
-                        <td>{{.Profit}}</td>
-                        <td>{{.PromotionExpenses}}</td>
-                        <td>{{.SellingGeneralAdministraticeExpenses}}</td>
-                        <td>{{.DepreciationAndAmoritization}}
+                        <td>{{incomeStatement.TimePeriod}}</td>
+                        <td>{{incomeStatement.TotalSales}}</td>
+                        <td>{{incomeStatement.CostOfGoodsSold}}</td>
+                        <td>{{incomeStatement.Profit}}</td>
+                        <td>{{incomeStatement.PromotionExpenses}}</td>
+                        <td>{{incomeStatement.SellingAndGeneralAdministrativeExpenses}}</td>
+                        <td>{{incomeStatement.DepreciationAndAmoritization}}
                     </tr>
-                    {{end}}
+                    {% endif %}
                 </tbody>
             </table>
-            <h2>Balance Sheet</h2>
+            <h2 id="balance-sheet">Balance Sheet</h2>
             <table>
                 <thead>
                     <tr>
@@ -166,63 +292,139 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {{range .balanceSheets}}
                     <tr>
-                        <td>{{.TimePeriod}}</td>
-                        <td>{{.Cash}}</td>
-                        <td>{{.AccountsReceivable}}</td>
-                        <td>{{.PrepaidExpenses}}</td>
-                        <td>{{.Inventory}}</td>
-                        <td>{{.PropertyAndEquipment}}</td>
-                        <td>{{.Goodwill}}</td>
-                        <td>{{.AccountsPayable}}</td>
-                        <td>{{.AccruedExpenses}}</td>
-                        <td>{{.UnearnedRevenue}}</td>
-                        <td>{{.LongTermDebt}}</td>
+                        <td>{{ balanceSheet.TimePeriod }}</td>
+                        <td>{{balanceSheet.Cash}}</td>
+                        <td>{{balanceSheet.AccountsReceivable}}</td>
+                        <td>{{balanceSheet.PrepaidExpenses}}</td>
+                        <td>{{balanceSheet.Inventory}}</td>
+                        <td>{{balanceSheet.PropertyAndEquipment}}</td>
+                        <td>{{balanceSheet.Goodwill}}</td>
+                        <td>{{balanceSheet.AccountsPayable}}</td>
+                        <td>{{balanceSheet.AccruedExpenses}}</td>
+                        <td>{{balanceSheet.UnearnedRevenue}}</td>
+                        <td>{{balanceSheet.LongTermDebt}}</td>
                     </tr>
-                    {{end}}
                 </tbody>
             </table>
-            <h2>Transactions</h2>
             <table>
+                <h2>Financial Ratios</h2>
                 <thead>
                     <tr>
-                        <th>Transaction ID</th>
-                        <th>Counterparty</th>
-                        <th>Transaction Date</th>
-                        <th>Amount</th>
-                        <th>Account Type</th>
-                        <th>Category</th>
+                        <th>Time Period</th>
+                        <th>Current Ratio</th>
+                        <th>Acid-Test Ratio</th>
+                        <th>Inventory Days</th>
+                        <th>Accounts Receivable Turnover</th>
+                        <th>Collection Period</th>
+                        <th>Debt Ratio</th>
+                        <th>Gross Profit percentage</th>
+                        <th>Return on Sales</th>
+                        <th>Return on Assets</th>
+                        <th>Cash Conversion Cycle</th>
+                    </tr>
+                </thead>
+                <tbody>
+                  {% if financialRatios %}
+                  {% for i in financialRatios %}
+                    <tr>
+                        <td>{{i.timePeriod}}</td>
+                        <td>{{i.currentRatio}}</td>
+                        <td>{{i.acidTestRatio}}</td>
+                        <td>{{i.InventoryDays}}</td>
+                        <td>{{i.accountsReceivableTurnover}}</td>
+                        <td>{{i.collectionPeriod}}</td>
+                        <td>{{i.debtRatio}}</td>
+                        <td>{{i.grossProfitPercentage}}</td>
+                        <td>{{i.returnOnSales}}</td>
+                        <td>{{i.returnOnAssets}}</td>
+                        <td>{{i.cashConversionCycle}}</td>
+                    </tr>
+                    {% endfor %}
+                    {% endif %}
+                </tbody>
+            </table>
+            <h2 id="journal-entries">Journal Entries</h2>
+            <table class="journal-entries-table">
+                <thead>
+                    <tr>
+                        <th>Journal Entry ID</th>
+                        <th>Date</th>
+                        <th>Debit Account</th>
+                        <th>Credit Account</th>
+                        <th>Debit</th>
+                        <th>Credit</th>
                         <th>Notes</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {{range .transactionPage}}
-                    <tr id="row-{{.Id}}">
-                        <td>{{.Id}}</td>
-                        <td>{{.Counterparty}}</td>
-                        <td>{{.TransactionDate}}</td>
-                        <td>{{.Amount}}</td>
-                        <td>{{.AccountType}}</td>
-                        <td>{{.Category}}</td>
-                        <td>{{.Notes}}</td>
+                    {% for i in journalEntries %}
+                    <tr>
+                        <td>{{i.Id}}</td>
+                        <td>{{i.Date}}</td>
+                        <td class="debit-account">{{i.DebitAccount}}</td>
+                        <td class="credit-account">{{i.CreditAccount}}</td>
+                        <td class="debit">{{i.Debit}}</td>
+                        <td class="credit">{{i.Credit}}</td>
+                        <td>{{i.Notes}}</td>
                     </tr>
-                    {{end}}
+                    {% endfor %}
+                    <tr>
+                        <td>1234</td>
+                        <td>09-06-2026</td>
+                        <td style="position: relative;bottom:0.7em; border:none;">1030</td>
+                        <td style="position: relative;top:0.7em;border:none;">2001</td>
+                        <td style="position: relative;bottom:0.7em; border:none;">50000</td>
+                        <td style="position: relative;top:0.7em;border:none;">50000</td>
+                        <td>Inventory purchase</td>
+                    </tr>
                 </tbody>
             </table>
-            <h2>Add a Transactions</h2>
+            <h2 id="trial-balance">Trial Balance</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Account Code</th>
+                        <th>Account Name</th>
+                        <th>Unadjusted Balance</th>
+                        <th>Adjusting Entry</th>
+                        <th>Adjusted Balance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for i in trialBalance %}
+                    <tr>
+                        <td>{{i.AccountCode}}</td>
+                        <td>{{i.AccountName}}</td>
+                        <td>{{i.UnadjustedBalance}}</td>
+                        <td>{{i.AdjustingEntry}}</td>
+                        <td>{{i.AdjustedBalance}}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <h2>Add a Journal Entry</h2>
+            <div class="add-record-form">
             <form method="POST" action="/finances">
-                <input id="counterparty" type="text">
-                <input id="transaction-date" type="date">
-                <input id="amount" type="number">
-                <select id="account-type">
-                    <option></option>
-                </select>
-                <select id="category">
-                    <option></option>
-                </select>
+                <div class="add-record-form-label">
+                    <label for="date">Date</label><br>
+                    <label for="debit-account">Debit Account</label><br>
+                    <label for="credit-account">Credit Account</label><br>
+                    <label for="debit">Debit</label><br>
+                    <label for="credit">Credit</label><br>
+                    <label for="notes">Notes</label>
+                </div>
+                <div class="add-record-form-input">
+                <input id="date" type="date" required><br>
+                <input id="debit-account" type="number" required><br>
+                <input id="cerdit-account" type="number" required><br>
+                <input id="debit" type="number" step="0.01" required><br>
+                <input id="credit" type="number" step="0.01" required><br>
+                <input id="notes" type="text"><br>
+                </div>
                 <input type="submit" value="Submit" />
             </form>
+            </div>
         </main>
         <footer>
         </footer>
