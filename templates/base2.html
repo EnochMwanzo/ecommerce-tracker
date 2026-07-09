@@ -4,34 +4,51 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>
-            {{ block "title" . }}
-            {{end}}
+            {% block title %}
+            {% endblock %}
         </title>
         <script
             type="module"
             src="https://cdn.jsdelivr.net/gh/starfederation/datastar@1.0.0-RC.8/bundles/datastar.js"
         ></script>
+        <script>
+        function formatCurrency() {
+          var myClasses = document.querySelectorAll(".currency");
+          myClasses.forEach(i => {
+            i.innerText = Intl.NumberFormat("en-US", {style: "currency", currency: "USD" }).format(i.innerText/100);
+          });
+        }
+        function formatPercent() {
+          var num = document.querySelectorAll(".percent");
+          num.forEach(i => {
+            i.innerText = Intl.NumberFormat("en-US",{style: 'percent', minimumFractionDigits:1}).format(i.innerText)
+          });
+        }
+        window.addEventListener('load', formatCurrency)
+        window.addEventListener('load', formatPercent)
+        </script>
         <style>
-        :root {
-            --light-bg-color: lightblue
-            --dark-bg-color: darkslategrey
+        body {
+            --light-bg-color: lightblue;
+            --dark-bg-color: darkslategrey;
         }
         body {
             background-color: lightblue;
             margin: 0 auto;
             text-align: center;
-            font-family: sans-serif
+            font-family: sans-serif;
         }
 
         table {
             border: 1px solid;
             text-align: center;
             margin: 0 auto;
+            overflow-x: auto;
         }
 
         th {
             max-width: 6em;
-            padding: 1em
+            padding: 1em;
         }
 
         td {
@@ -58,6 +75,11 @@
         .navbar-item:hover {
             background: darkblue;
         }
+
+        .add-record-form {
+            border: 1px solid;
+        }
+
         a {
             text-decoration: none;
         }
@@ -74,13 +96,17 @@
             a:hover {
                 background: lightblue;
                 color: black;
-                text-decoration: none
+                text-decoration: none;
+            }
+            .navbar-item:hover {
+                background: lightblue;
             }
         }
 
         .add-record-form {
             display: table;
             margin: 0 auto;
+            padding: 1em;
         }
 
         .add-record-form-label {
@@ -90,12 +116,39 @@
             padding-right: 1em;
         }
         .add-record-form-label label {
-            line-height:3em;
+            line-height: 3em;
         }
         .add-record-form-input {
             display: table-cell;
             width: 50%;
             text-align: left;
+        }
+
+        form select {
+            margin: 1em 0;
+        }
+        .debit-account {
+            position: relative;
+            bottom: 0.7em;
+            border: none;
+        }
+
+        .credit-account {
+            position: relative;
+            top: 0.7em;
+            border: none;
+        }
+
+        .debit {
+            position: relative;
+            bottom: 0.7em;
+            border: none;
+        }
+
+        .credit {
+            position: relative;
+            top: 0.7em;
+            border: none;
         }
         </style>
     </head>
@@ -117,56 +170,28 @@
         </header>
         <div class="wrapper">
         <main>
-        <h1>{{block "resource" . }}{{end}}s</h1>
-            <input
-                id="search"
-                type="text"
-                placeholder="Search..."
-                data-bind:query
-                data-on:input__debounce.200ms="@get('/{{block "resource" .}}{{end}}s/search')"
-            />
-            <label for="search-by">search by</label>
-            <select id="search-by" data-bind:search-by>
-                {{block "searchFields" . }}
-                {{end}}
-            </select>
+        <h1>{% block resource %}{% endblock %}s</h1>
             <div style="line-height:1.5em;">&#8202;</div>
             <table>
                 <thead>
                     <tr>
-                        {{block "tableHeaders" . }}{{end}}
+                        {% block tableHeaders %}{% endblock %}
                     </tr>
                 </thead>
                 <tbody>
-                    {{block "tableData" . }}{{end}}
-
+                    {% block tableData %}{% endblock %}
                 </tbody>
             </table>
-            <p>Pages</p>
-            <div class="page-number">
-                <label for="page-number">page number</label>
-                <input type="number" id="page-number" min="1" data-bind:page-number data-on:input__debounce.1000ms="@get('/{{block "resource" .}}{{end}}/search')" value="1">
-            </div>
-            <label for="items-per-page">items per page</label>
-            <input id="items-per-page" type="number"  min="5" data-bind:items-per-page data-on:input__debounce.1000ms="@get('/{{block "resource" .}}{{end}}/search')" value="5">
-            <!--<nav>
-                <ul>
-                    {{range 3}}
-                    <li data-on:click="@get('/{{block "resource" .}}{{end}}?pn={{ .back }}')>&laquo;</li>
-                    <li data-on:click="@get('/{{block "resource" .}}{{end}}?page={{.}}')">{{.}}</li>
-                    <!--<li data-on:click="@get('/{{block "resource" .}}{{end}}?pn={{ .forward }}'>&raquo;</li>
-                    {{end}}
-                </ul>
-            </nav>-->
-            <h2>Add a {{block "resource" . }}{{end}}</h2>
-            <form method="POST" action="/{{block "resource" .}}{{end}}s">
+            <h2>Add a {% block form_title %}{% endblock %}</h2>
+            <form method="POST" action="/{% block action_link %}{% endblock %}s">
                 <div class="add-record-form">
-                {{block "addResourceInputs" . }}{{end}}
+                {% block addResourceInputs %}{% endblock %}
                 </div>
                 <input type="submit" value="Submit" />
             </form>
         </main>
         <footer>
+          <a href="https://github.com/EnochMwanzo/ecommerce-tracker/">Ecommerce Tracker</a>
         </footer>
         <div>
     </body>

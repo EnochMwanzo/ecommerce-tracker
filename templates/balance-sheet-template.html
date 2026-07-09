@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+      Ecommerce Tracker: Balance Sheet
+    </title>
+    <style>
+    body {
+        margin: 0 auto;
+        text-align: center;
+        font-family: serif;
+        width: 600px;
+    }
+    .grid-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+    }
+    table {
+        margin: 0 auto;
+        width: 80%;
+    }
+    .category-name {
+        text-align: left;
+    }
+    .amount {
+        text-align: right;
+    }
+    .assets {
+        display: grid;
+        height: 100%;
+    }
+    </style>
+    <script
+      type="module"
+      src="https://cdn.jsdelivr.net/gh/starfederation/datastar@1.0.0-RC.8/bundles/datastar.js"
+    ></script>
+    <script>
+    function formatCurrency() {
+      var myClasses = document.querySelectorAll(".amount");
+      myClasses.forEach(i => {
+        i.innerText = Intl.NumberFormat("en-US", {style: "currency", currency: "USD" }).format(i.innerText/100);
+      });
+    }
+    window.addEventListener('load', formatCurrency)
+    </script>
+  </head>
+  <body>
+    <header>
+      <h1>Balance Sheet</h1>
+    </header>
+    <main>
+      <div class="grid-container">
+        <div class="assets">
+          <h2>Assets</h2>
+          <div class="accounts">
+            <table>
+              <tr>
+                <td class="category-name">Cash</td>
+                <td class="amount">{{balanceSheet.Cash}}</td>
+              </tr>
+                <tr>
+                  <td class="category-name">Accounts Receivable</td>
+                  <td class="amount">{{balanceSheet.AccountsReceivable}}</td>
+                </tr>
+                <tr>
+                  <td class="category-name">Prepaid Expenses</td>
+                  <td class="amount">{{balanceSheet.PrepaidExpenses}}</td>
+                </tr>
+                <tr>
+                  <td class="category-name">Inventory</td>
+                  <td class="amount">{{balanceSheet.Inventory}}</td>
+                </tr>
+                <tr>
+                  <td class="category-name">Property & Equipment</td>
+                  <td class="amount">{{balanceSheet.PropertyAndEquipment}}</td>
+                </tr>
+                <tr>
+                  <td class="category-name">Goodwill</td>
+                  <td class="amount">{{balanceSheet.Goodwill}}</td>
+                </tr>
+              </table>
+          </div>
+          <div class="total">
+            <table>
+              <tr>
+                <td class="category-name"><b>Total Assets:</b></td>
+                <td class="amount total" data-bind:total-assets>{{balanceSheet.Cash + balanceSheet.AccountsReceivable + balanceSheet.PrepaidExpenses + balanceSheet.Inventory + balanceSheet.PropertyAndEquipment + balanceSheet.Goodwill}}</td>
+              </tr>
+            </table>
+          </div>
+        </div>
+        <div class="liabilities-and-equity">
+          <h2>Liabilities and Equity</h2>
+          <h3>Liabilites</h3>
+          <div class="accounts">
+            <table>
+              <tr>
+                <td class="category-name">Accounts Payable</td>
+                <td class="amount">{{balanceSheet.AccountsPayable}}</td>
+              </tr>
+                <tr>
+                  <td class="category-name">Accured Expenses</td>
+                  <td class="amount">{{balanceSheet.AccruedExpenses}}</td>
+                </tr>
+                <tr>
+                  <td class="category-name">Unearned Revenue</td>
+                  <td class="amount">{{balanceSheet.UnearnedRevenue}}</td>
+                </tr>
+                <tr>
+                  <td class="category-name">Long Term Debt</td>
+                  <td class="amount">{{balanceSheet.LongTermDebt}}</td>
+                </tr>
+              </table>
+          </div>
+          <hr>
+          <div class="total">
+            <table>
+              <tr>
+                <td class="category-name"><b>Total Liabilities:</b></td>
+                <td class="amount total" data-bind:total-liabilites>{{balanceSheet.AccountsPayable + balanceSheet.UnearnedRevenue + balanceSheet.AccruedExpenses + balanceSheet.LongTermDebt}}</td>
+              </tr>
+            </table>
+          </div>
+          <hr>
+          <h3>Equity</h3>
+          <div class="accounts">
+            <table>
+              <tr>
+                <td class="category-name">Equity</td>
+                <td class="amount">{{balanceSheet.Equity}}</td>
+              </tr>
+            </table>
+          </div>
+          <hr>
+          <div class="total">
+            <table>
+              <tr>
+                <td class="category-name"><b>Total Equity:</b></td>
+                <td class="amount total" data-bind:total-equity>{{balanceSheet.Equity}}</td>
+              </tr>
+            </table>
+          </div>
+          <hr>
+          <table>
+            <td class="category-name"><b>Total Laibilities & Equity:</b></td>
+            <td class="amount" data-computed="$total-liabilities + $total-equity"></td>
+          </table>
+        </div>
+      </div>
+    </main>
+  </body>

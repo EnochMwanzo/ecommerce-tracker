@@ -10,6 +10,15 @@
       type="module"
       src="https://cdn.jsdelivr.net/gh/starfederation/datastar@1.0.0-RC.8/bundles/datastar.js"
     ></script>
+    <script>
+    function formatCurrency() {
+      var myClasses = document.querySelectorAll(".currency");
+      myClasses.forEach(i => {
+        i.innerText = Intl.NumberFormat("en-US", {style: "currency", currency: "USD" }).format(i.innerText/100);
+      });
+    }
+    window.addEventListener('load', formatCurrency)
+    </script>
     <style>
     body {
         --light-bg-color: lightblue;
@@ -156,24 +165,20 @@
             <th>ID</th>
             <th>Product Name</th>
             <th>Description</th>
-            <th>Stock at Warehouse</th>
-            <th>Stock at Manufacturer</th>
-            <th>Price</th>
-            <th>Reorder Point</th>
-            <th>Lead Time Days</th>
+            <th>Stock</th>
+            <th>Minimum Order Quantity</th>
+            <th>Retail Price</th>
           </tr>
         </thead>
         <tbody>
           {% for i in productRecords %}
-          <tr id="row-{{i.Id}}" data-signals="{row{{i.Id}}: {'id': {{i.Id}}, 'productName': '{{i.ProductName}}', 'description': '{{i.Description}}', 'stockAtWarehouse': {{i.StockAtWarehouse}}, 'stockAtManufacturer': {{i.StockAtManufacturer}}, 'price': {{i.Price|round(2)}}, 'reorderPoint': {{i.ReorderPoint}}, 'leadTimeDays': {{i.LeadTimeDays}} } }">
+          <tr id="{{i.Id}}" data-signals="{row{{i.Id}}: {'id': {{i.Id}}, 'productName': '{{i.ProductName}}', 'description': '{{i.Description}}', 'stock': {{i.Stock}}, 'minimumOrderQuanity': {{i.MinimumOrderQuantity}}, 'price': {{i.RetailPrice}} } }">
             <td data-text="$row{{i.Id}}.id"></td>
             <td data-text="$row{{i.Id}}.productName"></td>
             <td data-text="$row{{i.Id}}.description"></td>
-            <td data-text="$row{{i.Id}}.stockAtWarehouse"></td>
-            <td data-text="$row{{i.Id}}.stockAtManufacturer"></td>
-            <td data-text="$row{{i.Id}}.price"></td>
-            <td data-text="$row{{i.Id}}.reorderPoint"></td>
-            <td data-text="$row{{i.Id}}.leadTimeDays"></td>
+            <td data-text="$row{{i.Id}}.stock"></td>
+            <td data-text="$row{{i.Id}}.minimumOrderQuanity"></td>
+            <td class="currency">{{i.RetailPrice}}</td>
             <td>
               <button
                 data-on:click="confirm('Are you sure?') && @delete('/products?id={{i.Id}}')"
@@ -182,7 +187,7 @@
               </button>
             </td>
             <td>
-              <button data-on:click="@get('/products/edit?id=row-{{i.Id}}')">Edit</button>
+              <button data-on:click="@get('/products/edit?id={{i.Id}}')">Edit</button>
             </td>
           </tr>
           {% endfor %}
@@ -198,6 +203,7 @@
         <th colspan="3">Inventory</th>
       </tr>
       <tr>
+        <th>Product ID</th>
         <th>Time Period</th>
         <th>Quantity</th>
         <th>Unit Cost</th>
@@ -214,71 +220,73 @@
         {% for i in inventoryCosting %}
         {% if i.InventoryType == 'Purchase' %}
         <tr>
+          <td>{{ i.ProductId }}</td>
           <td>{{i.TimePeriod}}</td>
           <td>{{i.Quantity}}</td>
-          <td>{{i.UnitCost}}</td>
-          <td>{{i.Total}}</td>
+          <td class="currency">{{i.UnitCost}}</td>
+          <td class="currency">{{i.Total}}</td>
           <td></td>
           <td></td>
           <td></td>
           <td>{{i.QuantityCount}}</td>
-          <td>{{i.UnitCost}}</td>
-          <td>{{i.TotalCount}}</td>
+          <td class="currency">{{i.UnitCost}}</td>
+          <td class="currency">{{i.TotalCount}}</td>
         </tr>
         {% elif i.InventoryType == 'Cost of Goods Sold' %}
         <tr>
+          <td>{{ i.ProductId }}</td>
           <td>{{i.TimePeriod}}</td>
           <td></td>
           <td></td>
           <td></td>
           <td>{{i.Quantity}}</td>
-          <td>{{i.UnitCost}}</td>
-          <td>{{i.Total}}</td>
+          <td class="currency">{{i.UnitCost}}</td>
+          <td class="currency">{{i.Total}}</td>
           <td>{{i.QuantityCount}}</td>
-          <td>{{i.UnitCost}}</td>
-          <td>{{i.TotalCount}}</td>
+          <td class="currency">{{i.UnitCost}}</td>
+          <td class="currency">{{i.TotalCount}}</td>
         </tr>
         {% endif %}
         {% endfor %}
       </tbody>
     </table>
     <h2>Add a Product</h2>
-    <form method="POST" action="/products?form=products">
+    <form method="POST" action="/products?form=product">
       <div class="add-record-form">
         <div class="add-record-form-label">
-          <label for="product-name">product name</label><br>
-          <label for="description">product description</label><br>
-          <label for="price">price</label><br>
-          <label for="stock-at-warehouse">stock at warehouse</label><br>
-          <label for="stock-at-manufacturer">stock at manufacturer</label>
+          <label for="product-name">Product name</label><br>
+          <label for="description">Product description</label><br>
+          <label for="price">Retail Price</label><br>
+          <label for="minimum-order-quanity">Minimum Order Quantity</label>
         </div>
         <div class="add-record-form-input">
           <input id="product-name" type="text" name="product-name" required /><br>
           <input id="description" type="text" name="description" required /><br>
           <input id="price" type="number" name="price" step="0.01" required /><br>
-          <input id="stock-at-warehouse" type="number" name="stock-at-warehouse" required /><br>
-          <input id="stock-at-manufacturer" type="number" name="stock-at-manufacturer" required />
+          <input id="minimum-order-quanity" type="number" name="minimum-order-quantity" required />
         </div>
       </div>
       <input type="submit" value="Submit" />
       </form>
-      <h2>Enter Inventory Costs</h2>
+      <h2>Purchase Inventory</h2>
       <form method="POST" action="/products">
         <div class="add-record-form">
           <div class="add-record-form-label">
+            <label for="product">Product</label><br>
             <label for="time-period">Time Period</label><br>
             <label for="inventory-type">Inventory Type</label><br>
             <label for="quantity">Quantity</label><br>
             <label for="unit-cost">Unit Cost</label>
           </div>
           <div class="add-record-form-input">
-            <input id="time-period" type="date" name="time-period" required /><br>
-            <select id="inventory-type" name="inventory-type">
-              <option value="1">Purchase</option>
-              <option value="2">Cost of Goods Sold</option>
+            <select id="product" name="product">
+              {% for i in productRecords %}
+              <option value="{{ i.Id }}">{{ i.Id }} - {{ i.ProductName }}</option>
+              {% endfor %}
             </select><br>
+            <input id="time-period" type="date" name="time-period" required /><br>
             <input id="quantity" type="number" name="quantity" required /><br>
-            <input id="unit-cost" type="number" name="unit-cost" required />
+            <input id="unit-cost" type="number" name="unit-cost" step="0.01" required />
           </div>
         </div>
         <input type="submit" value="Submit" />

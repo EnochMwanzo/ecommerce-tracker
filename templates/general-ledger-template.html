@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+      Ecommerce Tracker: Balance Sheet
+    </title>
+    <style>
+    body {
+        margin: 0 auto;
+        text-align: center;
+        font-family: serif;
+        width: 600px;
+    }
+    .grid-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+    }
+    table {
+        margin: 0 auto;
+        width: 80%;
+    }
+    .category-name {
+        text-align: left;
+    }
+    .amount {
+        text-align: right;
+    }
+    .assets {
+        display: grid;
+        height: 100%;
+    }
+    </style>
+    <script
+      type="module"
+      src="https://cdn.jsdelivr.net/gh/starfederation/datastar@1.0.0-RC.8/bundles/datastar.js"
+    ></script>
+    <script>
+    function formatCurrency() {
+      var myClasses = document.querySelectorAll(".amount");
+      myClasses.forEach(i => {
+        i.innerText = Intl.NumberFormat("en-US", {style: "currency", currency: "USD" }).format(i.innerText/100);
+      });
+    }
+    window.addEventListener('load', formatCurrency)
+    </script>
+  </head>
+  <body>
+    <header>
+      <h1>General Ledger</h1>
+    </header>
+    <main>
+      {% for i in generalLedger %}
+        {% if i.AccountCode != 0 %}
+          <h2>{{i.AccountCode}} - {{i.AccountName}}</h2>
+          {% for e in i.Ledger.JournalEntryID %}
+            {% if e != 0 %}
+            <div class="grid-container">
+            <div class="id">{{e}}</div>
+            <div class="credit-or-debit">{{i.Ledger.CreditOrDebit[loop.index0]}}</div>
+            <div class="amount balance">{{i.Ledger.Balance[loop.index0]}}</div>
+            </div>
+            {% endif %}
+          {% endfor %}
+        {% endif %}
+      {% endfor %}
+    </main>
+  </body>
+</html>

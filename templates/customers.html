@@ -1,58 +1,247 @@
-{{define "title"}}Customers{{end}}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+      Customers
+    </title>
+    <script
+      type="module"
+      src="https://cdn.jsdelivr.net/gh/starfederation/datastar@1.0.0-RC.8/bundles/datastar.js"
+    ></script>
+    <script>
+    function formatCurrency() {
+      var myClasses = document.querySelectorAll(".number");
+      myClasses.forEach(i => {
+        i.innerText = Intl.NumberFormat("en-US", {style: "currency", currency: "USD" }).format(i.innerText);
+      });
+    }
+    window.addEventListener('load', formatCurrency)
+    </script>
+    <style>
+    body {
+        --light-bg-color: lightblue;
+        --dark-bg-color: darkslategrey;
+    }
+    body {
+        background-color: lightblue;
+        margin: 0 auto;
+        text-align: center;
+        font-family: sans-serif;
+    }
 
-{{define "resource"}}customer{{end}}
+    table {
+        border: 1px solid;
+        text-align: center;
+        margin: 0 auto;
+    }
 
+    th {
+        max-width: 6em;
+        padding: 1em;
+    }
 
-{{define "tableHeaders"}}
-<th>id</th>
-<th>Customer Name</th>
-<th>Subscriber</th>
-<th>Cohort</th>
-<th>Sign Up Date</th>
-<th>Lifetime Value</th>
-{{end}}
+    td {
+        border: 1px solid;
+        padding: 1em;
+    }
 
-{{define "tableData"}}
-    {{range .data}}
-    <tr id="row-{{.Id}}" data-signals="{row{{.Id}}: {'id': {{.Id}}, 'customerName': '{{.CustomerName}}', 'subscriber': {{.Subscriber}}, 'cohort': '{{.Cohort}}', 'signupDate': '{{.SignupDate}}', 'lifetimeValue':{{.LifetimeValue}} }}">
-        <td data-text="$row{{.Id}}.id"></td>
-        <td data-text="$row{{.Id}}.customerName"></td>
-        <td data-text="$row{{.Id}}.subscriber"></td>
-        <td data-text="$row{{.Id}}.cohort"></td>
-        <td data-text="$row{{.Id}}.signupDate"></td>
-        <td data-text="$row{{.Id}}.lifetimeValue"></td>
+    .page-links {
+        background: turquoise;
+        margin: 0;
+    }
+
+    input {
+        margin: 1em 0;
+        align-items: center;
+    }
+
+    .navbar-item {
+        display: inline-flex;
+        flex-grow: 1;
+        padding: 1.5em 0.5em;
+    }
+
+    .navbar-item:hover {
+        background: darkblue;
+    }
+
+    .add-record-form {
+        border: 1px solid;
+    }
+
+    a {
+        text-decoration: none;
+    }
+    a:hover {
+        color: white;
+        text-decoration: none;
+    }
+
+    @media (prefers-color-scheme: dark) {
+        body {
+            background: darkslategrey;
+            color: lightblue;
+        }
+        a:hover {
+            background: lightblue;
+            color: black;
+            text-decoration: none;
+        }
+        .navbar-item:hover {
+            background: lightblue;
+        }
+    }
+
+    .add-record-form {
+        display: table;
+        margin: 0 auto;
+        padding: 1em;
+    }
+
+    .add-record-form-label {
+        display: table-cell;
+        width: 50%;
+        text-align: right;
+        padding-right: 1em;
+    }
+    .add-record-form-label label {
+        line-height: 3em;
+    }
+    .add-record-form-input {
+        display: table-cell;
+        width: 50%;
+        text-align: left;
+    }
+
+    form select {
+        margin: 1em 0;
+    }
+    .debit-account {
+        position: relative;
+        bottom: 0.7em;
+        border: none;
+    }
+
+    .credit-account {
+        position: relative;
+        top: 0.7em;
+        border: none;
+    }
+
+    .debit {
+        position: relative;
+        bottom: 0.7em;
+        border: none;
+    }
+
+    .credit {
+        position: relative;
+        top: 0.7em;
+        border: none;
+    }
+    </style>
+  </head>
+  <body>
+    <header>
+    <nav class="page-links">
+      <ul>
+        <a href="/customers"><li class="navbar-item">Customers</li></a>
+        <a href="/products"><li class="navbar-item">Products</li></a>
+        <a href="/employees"><li class="navbar-item">Employees</li></a>
+        <a href="/orders"><li class="navbar-item">Orders</li></a>
+        <a href="/reviews"><li class="navbar-item">Reviews</li></a>
+        <a href="/finances"><li class="navbar-item">Finances</li></a>
+      </ul>
+    </nav>
+    </header>
+    <div class="wrapper">
+    <main>
+      <h1>Customers</h1>
+      <table>
+        <thead>
+          <tr>
+            <th>id</th>
+            <th>Customer Name</th>
+            <th>Subscriber</th>
+            <th>Cohort</th>
+            <th>Sign Up Date</th>
+          </tr>
+          </thead>
+          <tbody>
+    {% for i in customerRecords %}
+    <tr id="{{i.Id}}" data-signals="{row{{i.Id}}: {'id': {{i.Id}}, 'customerName': '{{i.CustomerName}}', 'subscriber': '{{i.Subscriber}}', 'cohort': '{{i.Cohort}}', 'signupDate': '{{i.SignupDate}}' }}">
+        <td data-text="$row{{i.Id}}.id">{{i.Id}}</td>
+        <td data-text="$row{{i.Id}}.customerName">{{i.CustomerName}}</td>
+        <td data-text="$row{{i.Id}}.subscriber"></td>
+        <td data-text="$row{{i.Id}}.cohort">{{i.Cohort}}</td>
+        <td data-text="$row{{i.Id}}.signupDate">{{i.SignupDate}}</td>
         <td>
             <button
-                data-on:click="confirm('Are you sure?') && @delete('/customers?id={{.Id}}')"
+                data-on:click="confirm('Are you sure?') && @delete('/customers?id={{i.Id}}')"
             >
                 Delete
             </button>
         </td>
         <td>
-            <button data-on:click="@get('/customers/edit?id=row-{{.Id}}')">Edit</button>
+            <button data-on:click="@get('/customers/edit?id={{i.Id}}')">Edit</button>
         </td>
     </tr>
-    {{end}}
-{{end}}
-{{define "addResourceInputs"}}
-<div class="add-record-form-label">
-  <label for="customer-name">Customer Name</label><br>
-  <label for="subscriber">Subscriber</label><br>
-  <label for="cohort">Cohort</label><br>
+    {% endfor %}
+    </tbody>
+  </table>
+<h2>Marketing Analysis</h2>
+  <table>
+    <thead>
+    <tr>
+      <th>id</th>
+      <th>name</th>
+      <th>lifetime value</th>
+      <th>number of orders</th>
+    </tr>
+    </thead>
+    <tbody>
+  {% for i in rfm %}
+    <tr>
+      <td>{{i.Id}}</td>
+      <td>{{i.CustomerName}}</td>
+      <td class="currency">{{i.LifetimeValue}}</td>
+      <td>{{i.NumberOfOrders}}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+  <h2>Add a Customer</h2>
+  <form method="POST" action="/customers">
+   <div class="add-record-form">
+    <div class="add-record-form-label">
+      <label for="customer-name">Customer Name</label><br>
+      <label for="subscriber">Subscriber</label><br>
+      <label for="cohort">Cohort</label><br>
+    </div>
+    <div class="add-record-form-input">
+      <input id="customer-name" type="text" name="customer-name" required /><br>
+      <select id="subscriber" name="subscriber">
+          <option value="0">False</option>
+          <option value="1">True</option>
+      </select> <br>
+      <select id="cohort" name="cohort">
+          <option value="1">engaged prospect</option>
+          <option value="2">lapsed prospect</option>
+          <option value="3">one purchase</option>
+          <option value="4">two or more purchases</option>
+          <option value="5">VIP</option>
+          <option value="6">churned</option>
+      </select><br>
+    </div>
+    </div>
+    <input type="submit" value="Submit" />
+  </form>
+</main>
+<footer>
+  <a href="https://github.com/EnochMwanzo/ecommerce-tracker/">Ecommerce Tracker</a>
+</footer>
 </div>
-<div class="add-record-form-input">
-  <input id="customer-name" type="text" name="customer-name" required /><br>
-  <select id="subscriber" name="subscriber">
-      <option value="0">False</option>
-      <option value="1">True</option>
-  </select> <br>
-  <select id="cohort" name="cohort">
-      <option value="1">engaged prospect</option>
-      <option value="2">lapsed prospect</option>
-      <option value="3">one purchase</option>
-      <option value="4">two or more purchases</option>
-      <option value="5">VIP</option>
-      <option value="6">churned</option>
-  </select><br>
-</div>
-{{end}}
+</body>
+</html>

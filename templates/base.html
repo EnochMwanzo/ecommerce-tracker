@@ -10,6 +10,22 @@
         <script
             type="module"
             src="https://cdn.jsdelivr.net/gh/starfederation/datastar@1.0.0-RC.8/bundles/datastar.js"
+            <script>
+            function formatCurrency() {
+              var myClasses = document.querySelectorAll(".currency");
+              myClasses.forEach(i => {
+                i.innerText = Intl.NumberFormat("en-US", {style: "currency", currency: "USD" }).format(i.innerText/100);
+              });
+            }
+            function formatPercent() {
+              var num = document.querySelectorAll(".percent");
+              num.forEach(i => {
+                i.innerText = Intl.NumberFormat("en-US",{style: 'percent', minimumFractionDigits:1}).format(i.innerText)
+              });
+            }
+            window.addEventListener('load', formatCurrency)
+            window.addEventListener('load', formatPercent)
+            </script>
         ></script>
         <style>
         {{block "styles" . }}
@@ -47,7 +63,6 @@
                 </tbody>
             </table>
             {{block "extra" . }}{{end}}
-            <p>Pages</p>
             <h2>Add a {{block "resource" . }}{{end}}</h2>
             <form method="POST" action="/{{block "resource" .}}{{end}}s">
                 <div class="add-record-form">

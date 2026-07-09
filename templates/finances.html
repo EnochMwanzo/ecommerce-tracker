@@ -10,6 +10,22 @@
             type="module"
             src="https://cdn.jsdelivr.net/gh/starfederation/datastar@1.0.0-RC.8/bundles/datastar.js"
         ></script>
+        <script>
+        function formatCurrency() {
+          var myClasses = document.querySelectorAll(".currency");
+          myClasses.forEach(i => {
+            i.innerText = Intl.NumberFormat("en-US", {style: "currency", currency: "USD" }).format(i.innerText/100);
+          });
+        }
+        function formatPercent() {
+          var num = document.querySelectorAll(".percent");
+          num.forEach(i => {
+            i.innerText = Intl.NumberFormat("en-US",{style: 'percent', minimumFractionDigits:1}).format(i.innerText)
+          });
+        }
+        window.addEventListener('load', formatCurrency)
+        window.addEventListener('load', formatPercent)
+        </script>
         <style>
         body {
             background-color: lightblue;
@@ -22,6 +38,9 @@
             border: 1px solid;
             text-align: center;
             margin: 0 auto;
+            overflow-x: auto;
+            overflow-y: scroll;
+            max-height: 500px;
         }
 
         th {
@@ -81,6 +100,9 @@
             }
         }
 
+        form select {
+            margin: 1em 0;
+        }
         .add-record-form {
             display: table;
             margin: 0 auto;
@@ -129,8 +151,11 @@
         .journal-entries-table tr {
             padding: 1em;
         }
+
+        hr {
+            border: 1px solid black;
+        }
         </style>
-        <link rel="stylesheet" href="/templates/styles.css">
     </head>
     <div>
     <body>
@@ -148,6 +173,7 @@
             </ul>
         </nav>
         </header>
+        <main>
         <div class="wrapper">
         <h1>Finances</h1>
             <div style="line-height:1.5em;">&#8202;</div>
@@ -182,48 +208,44 @@
                         <td>{{i.FinancialStatement}}</td>
                     </tr>
                     {% endfor %}
-                    <tr>
-                        <td>1030</td>
-                        <td>Inventory</td>
-                        <td>Asset</td>
-                        <td>Balance Sheet</td>
-                    </tr>
-                    <tr>
-                        <td>2001</td>
-                        <td>Accounts Payable</td>
-                        <td>Liability</td>
-                        <td>Balance Sheet</td>
-                    </tr>
                   {% endif %}
                 </tbody>
             </table>
+            <hr>
             <h2 id="general-ledger">General Ledger</h2>
-
-            <select>
+            <a href="/finances?statement=ledger" target="_blank">Full Geenral Ledger (new tab)</a>
+            <form id="change-ledger-form">
+            <select id="ledger-index" name="ledger-index">
               {% for i in chartOfAccounts %}
-              <option data-on:click="@get('/finances?ledgerAccountCode={{i.AccountCode}})">{{i.AccountCode}} {{i.AccountName}}</option>
+              <option value="{{i.AccountName}}">{{i.AccountCode}} {{i.AccountName}}</option>
               {% endfor %}
             </select>
+            <button data-on:click="@get('/finances', {contentType: 'form'})">Submit</button>
+            </form>
+            <div id="general-ledger-table">
+            <h3>{{displayedLedger.AccountName}}</h3>
             <table>
                 <thead>
                     <tr>
-                        <th>Account Code</th>
-                        <th>Account Name</th>
                         <th>Journal Entry ID</th>
+                        <th>Credit or Debit</th>
                         <th>Balance</th>
                     </tr>
                 </thead>
                 <tbody>
-                  {% if generalLedger %}
+                  {% for i in displayedLedger.Ledger.JournalEntryID %}
+                  {% if i != 0 %}
                     <tr>
-                        <td>{{generalLedger.AccountCode}}</td>
-                        <td>{{generalLedger.AccountName}}</td>
-                        <td>{{generalLedger.JournalEntryID}}</td>
-                        <td>{{generalLedger.Balance}}</td>
+                        <td>{{i}}</td>
+                        <td>{{displayedLedger.Ledger.CreditOrDebit[loop.index0]}}
+                        <td class="currency">{{displayedLedger.Ledger.Balance[loop.index0]}}</td>
                     </tr>
                     {% endif %}
+                  {% endfor %}
                 </tbody>
             </table>
+            </div>
+            <hr>
             <h2 id="cash-flow-statement">Cash Flow</h2>
             <table>
                 <thead>
@@ -239,15 +261,17 @@
                   {% if cashFlowStatement %}
                     <tr>
                         <td>{{cashFlowStatement.TimePeriod}}</td>
-                        <td>{{cashFlowStatement.OperatingCashFlow}}</td>
-                        <td>{{cashFlowStatement.TotalSales}}</td>
-                        <td>{{cashFlowStatement.CashSpentOnAssets}}</td>
-                        <td>{{cashFlowStatement.OperatingExpenses}}</td>
+                        <td class="currency">{{cashFlowStatement.OperatingCashFlow}}</td>
+                        <td class="currency">{{cashFlowStatement.TotalSales}}</td>
+                        <td class="currency">{{cashFlowStatement.CashSpentOnAssets}}</td>
+                        <td class="currency">{{cashFlowStatement.OperatingExpenses}}</td>
                     </tr>
                     {% endif %}
                 </tbody>
             </table>
+            <hr>
             <h2 id="income-statement">Income Statement</h2>
+            <a href="/finances?statement=income" target="_blank">Generate Statement (new tab)</a>
             <table>
                 <thead>
                     <tr>
@@ -264,17 +288,19 @@
                   {% if incomeStatement %}
                     <tr>
                         <td>{{incomeStatement.TimePeriod}}</td>
-                        <td>{{incomeStatement.TotalSales}}</td>
-                        <td>{{incomeStatement.CostOfGoodsSold}}</td>
-                        <td>{{incomeStatement.Profit}}</td>
-                        <td>{{incomeStatement.PromotionExpenses}}</td>
-                        <td>{{incomeStatement.SellingAndGeneralAdministrativeExpenses}}</td>
-                        <td>{{incomeStatement.DepreciationAndAmoritization}}
+                        <td class="currency">{{incomeStatement.TotalSales}}</td>
+                        <td class="currency">{{incomeStatement.CostOfGoodsSold}}</td>
+                        <td class="currency">{{incomeStatement.Profit}}</td>
+                        <td class="currency">{{incomeStatement.PromotionExpenses}}</td>
+                        <td class="currency">{{incomeStatement.SellingAndGeneralAdministrativeExpenses}}</td>
+                        <td class="currency">{{incomeStatement.DepreciationAndAmoritization}}
                     </tr>
                     {% endif %}
                 </tbody>
             </table>
+            <hr>
             <h2 id="balance-sheet">Balance Sheet</h2>
+            <a href="/finances?statement=balance" target="_blank">Generate Statement (new tab)</a>
             <table>
                 <thead>
                     <tr>
@@ -294,56 +320,56 @@
                 <tbody>
                     <tr>
                         <td>{{ balanceSheet.TimePeriod }}</td>
-                        <td>{{balanceSheet.Cash}}</td>
-                        <td>{{balanceSheet.AccountsReceivable}}</td>
-                        <td>{{balanceSheet.PrepaidExpenses}}</td>
-                        <td>{{balanceSheet.Inventory}}</td>
-                        <td>{{balanceSheet.PropertyAndEquipment}}</td>
-                        <td>{{balanceSheet.Goodwill}}</td>
-                        <td>{{balanceSheet.AccountsPayable}}</td>
-                        <td>{{balanceSheet.AccruedExpenses}}</td>
-                        <td>{{balanceSheet.UnearnedRevenue}}</td>
-                        <td>{{balanceSheet.LongTermDebt}}</td>
+                        <td class="currency">{{balanceSheet.Cash}}</td>
+                        <td class="currency">{{balanceSheet.AccountsReceivable}}</td>
+                        <td class="currency">{{balanceSheet.PrepaidExpenses}}</td>
+                        <td class="currency">{{balanceSheet.Inventory}}</td>
+                        <td class="currency">{{balanceSheet.PropertyAndEquipment}}</td>
+                        <td class="currency">{{balanceSheet.Goodwill}}</td>
+                        <td class="currency">{{balanceSheet.AccountsPayable}}</td>
+                        <td class="currency">{{balanceSheet.AccruedExpenses}}</td>
+                        <td class="currency">{{balanceSheet.UnearnedRevenue}}</td>
+                        <td class="currency">{{balanceSheet.LongTermDebt}}</td>
                     </tr>
                 </tbody>
             </table>
-            <table>
-                <h2>Financial Ratios</h2>
-                <thead>
+            <hr>
+              <h2 id="financial-ratios">Financial Ratios</h2>
+                <table>
+                  <thead>
                     <tr>
                         <th>Time Period</th>
                         <th>Current Ratio</th>
                         <th>Acid-Test Ratio</th>
-                        <th>Inventory Days</th>
+                        <!--<th>Inventory Days</th>
                         <th>Accounts Receivable Turnover</th>
                         <th>Collection Period</th>
-                        <th>Debt Ratio</th>
+                        <th>Debt Ratio</th>-->
                         <th>Gross Profit percentage</th>
-                        <th>Return on Sales</th>
+                        <!--<th>Return on Sales</th>
                         <th>Return on Assets</th>
-                        <th>Cash Conversion Cycle</th>
+                        <th>Cash Conversion Cycle</th>-->
                     </tr>
                 </thead>
                 <tbody>
                   {% if financialRatios %}
-                  {% for i in financialRatios %}
                     <tr>
-                        <td>{{i.timePeriod}}</td>
-                        <td>{{i.currentRatio}}</td>
-                        <td>{{i.acidTestRatio}}</td>
-                        <td>{{i.InventoryDays}}</td>
-                        <td>{{i.accountsReceivableTurnover}}</td>
-                        <td>{{i.collectionPeriod}}</td>
-                        <td>{{i.debtRatio}}</td>
-                        <td>{{i.grossProfitPercentage}}</td>
-                        <td>{{i.returnOnSales}}</td>
-                        <td>{{i.returnOnAssets}}</td>
-                        <td>{{i.cashConversionCycle}}</td>
+                        <td>{{financialRatios.TimePeriod}}</td>
+                        <td >{{financialRatios.CurrentRatio}}</td>
+                        <td >{{financialRatios.AcidTestRatio}}</td>
+                        <!--<td>{{financialRatios.InventoryDays}}</td>-->
+                        <td class="percent">{{financialRatios.GrossProfitPercentage}}</td>
+                        <!--<td>{{financialRatios.AccountsReceivableTurnover}}</td>
+                        <td>{{financialRatios.CollectionPeriod}}</td>
+                        <td>{{financialRatios.DebtRatio}}</td>-->
+                        <!--<td>{{financialRatios.ReturnOnSales}}</td>-->
+                        <!--<td>{{financialRatios.ReturnOnAssets}}</td>
+                        <td>{{financialRatios.CashConversionCycle}}</td>-->
                     </tr>
-                    {% endfor %}
                     {% endif %}
                 </tbody>
             </table>
+            <hr>
             <h2 id="journal-entries">Journal Entries</h2>
             <table class="journal-entries-table">
                 <thead>
@@ -362,24 +388,25 @@
                     <tr>
                         <td>{{i.Id}}</td>
                         <td>{{i.Date}}</td>
-                        <td class="debit-account">{{i.DebitAccount}}</td>
-                        <td class="credit-account">{{i.CreditAccount}}</td>
-                        <td class="debit">{{i.Debit}}</td>
-                        <td class="credit">{{i.Credit}}</td>
+                        <td class="debit-account">{{i.DebitAccount}} ({% for key, value in accountMap %}
+                        {% if value == i.DebitAccount %}
+                        {{key}}
+                        {% endif %}
+                        {% endfor %})</td>
+                        <td class="credit-account">{{i.CreditAccount}} ({% for key, value in accountMap %}
+                        {% if value == i.CreditAccount %}
+                        {{key}}
+                        {% endif %}
+                        {% endfor %})</td>
+                        <td class="debit currency">{{i.Debit}}</td>
+                        <td class="credit currency">{{i.Credit}}</td>
                         <td>{{i.Notes}}</td>
                     </tr>
                     {% endfor %}
-                    <tr>
-                        <td>1234</td>
-                        <td>09-06-2026</td>
-                        <td style="position: relative;bottom:0.7em; border:none;">1030</td>
-                        <td style="position: relative;top:0.7em;border:none;">2001</td>
-                        <td style="position: relative;bottom:0.7em; border:none;">50000</td>
-                        <td style="position: relative;top:0.7em;border:none;">50000</td>
-                        <td>Inventory purchase</td>
-                    </tr>
                 </tbody>
             </table>
+            <hr>
+            <p></p>
             <h2 id="trial-balance">Trial Balance</h2>
             <table>
                 <thead>
@@ -396,16 +423,17 @@
                     <tr>
                         <td>{{i.AccountCode}}</td>
                         <td>{{i.AccountName}}</td>
-                        <td>{{i.UnadjustedBalance}}</td>
-                        <td>{{i.AdjustingEntry}}</td>
-                        <td>{{i.AdjustedBalance}}</td>
+                        <td class="currency">{{i.UnadjustedBalance}}</td>
+                        <td class="currency">{{i.AdjustingEntry}}</td>
+                        <td class="currency">{{i.AdjustedBalance}}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
+            <hr>
             <h2>Add a Journal Entry</h2>
             <div class="add-record-form">
-            <form method="POST" action="/finances">
+            <form id="add-journal-entry" method="POST" action="/finances">
                 <div class="add-record-form-label">
                     <label for="date">Date</label><br>
                     <label for="debit-account">Debit Account</label><br>
@@ -415,14 +443,22 @@
                     <label for="notes">Notes</label>
                 </div>
                 <div class="add-record-form-input">
-                <input id="date" type="date" required><br>
-                <input id="debit-account" type="number" required><br>
-                <input id="cerdit-account" type="number" required><br>
-                <input id="debit" type="number" step="0.01" required><br>
-                <input id="credit" type="number" step="0.01" required><br>
-                <input id="notes" type="text"><br>
+                <input id="date" type="date" name="date" required><br>
+                <select id="debit-account" name="debit-account">
+                  {% for i in chartOfAccounts %}
+                  <option value="{{i.AccountCode}}">{{i.AccountCode}} - {{i.AccountName}}</option>
+                  {% endfor %}
+                </select><br>
+                <select id="credit-account" name="credit-account">
+                  {% for i in chartOfAccounts %}
+                  <option value="{{accountMap[i.AccountName]}}">{{i.AccountCode}} - {{i.AccountName}}</option>
+                  {% endfor %}
+                </select><br>
+                <input id="debit" name="debit" type="number" step="0.01" required><br>
+                <input id="credit" name="credit"type="number" step="0.01" required><br>
+                <input id="notes" name="notes" type="text"><br>
                 </div>
-                <input type="submit" value="Submit" />
+                <button data-on:click="@post('/finances', {contentType: 'form'})">Submit</button>
             </form>
             </div>
         </main>

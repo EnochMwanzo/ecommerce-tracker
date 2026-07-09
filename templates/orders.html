@@ -1,15 +1,8 @@
-{{define "title"}}Orders{{end}}
+{% extends "base2.html" %}
+{% block title %} Orders {% endblock %}
 
-{{define "resource"}}order{{end}}
 
-{{define "searchFields"}}
-<option value="order-id">Order ID</option>
-<option value="customer-id">Customer ID</option>
-<option value="product-id">Product ID</option>
-<option value="progress">Progress</option>
-{{end}}
-
-{{define "tableHeaders"}}
+{% block tableHeaders %}
 <th>Order ID</th>
 <th>Customer ID</th>
 <th>Product ID</th>
@@ -17,41 +10,57 @@
 <th>Total</th>
 <th>Progress</th>
 <th>Order Date</th>
-{{end}}
+<th>Cost of Goods Sold</th>
+<th>Order Profit Margin</th>
+{% endblock %}
 
-{{define "tableData"}}
-    {{range .data}}
-    <tr id="row-{{.Id}}" data-signals="{row{{.Id}}: {'id': {{.Id}}, 'customerId': {{.CustomerId}}, 'productId': {{.ProductId}}, 'quantity': {{.Quantity}}, 'total': {{.Total}}, 'progress': '{{.Progress}}', 'orderDate': '{{.OrderDate}}' }}">
-        <td data-text="$row{{.Id}}.id"></td>
-        <td data-text="$row{{.Id}}.customerId"></td>
-        <td data-text="$row{{.Id}}.productId"></td>
-        <td data-text="$row{{.Id}}.quantity"></td>
-        <td data-text="$row{{.Id}}.total"></td>
-        <td data-text="$row{{.Id}}.progress"></td>
-        <td data-text="$row{{.Id}}.orderDate"></td>
-        <td>
-            <button data-on:click="confirm('Are you sure?') && @delete('/orders?id={{.Id}}')">
+{% block tableData %}
+    {% for i in orderRecords %}
+    <tr id="{{i.Id}}" data-signals="{row{{i.Id}}: {'id': {{i.Id}}, 'customerId': {{i.CustomerId}}, 'productId': {{i.ProductId}}, 'quantity': {{i.Quantity}}, 'total': {{i.Total}}, 'progress': '{{i.Progress}}', 'orderDate': '{{i.OrderDate}}', 'costOfGoodsSold': {{i.CostOfGoodsSold}}, 'orderProfitMargin': {{i.OrderProfitMargin}} }}">
+        <td data-text="$row{{i.Id}}.id"></td>
+        <td data-text="$row{{i.Id}}.customerId"></td>
+        <td data-text="$row{{i.Id}}.productId"></td>
+        <td data-text="$row{{i.Id}}.quantity"></td>
+        <td class="currency">{{i.Total}}</td>
+        <td data-text="$row{{i.Id}}.progress"></td>
+        <td data-text="$row{{i.Id}}.orderDate"></td>
+        <td class="currency">{{i.CostOfGoodsSold}}</td>
+        <td data-text="$row{{i.Id}}.orderProfitMargin"></td>
+            <button data-on:click="confirm('Are you sure?') && @delete('/orders?id={{i.Id}}&quantity={{i.Quantity}}')">
                 Delete
             </button>
-        </td>
-        <td><button data-signals="{rowBeingEdited: {'id': {{.Id}}, 'customerId': {{.CustomerId}}, 'productId': {{.ProductId}}, 'quantity': {{.Quantity}}, 'total': {{.Total}}, 'progress': '{{.Progress}}', 'orderDate': '{{.OrderDate}}' }}" data-on:click="@patch('/orders/edit?id={{.Id}}')">
+        <td><button data-on:click="@patch('/orders/edit?id={{i.Id}}')">
             Edit
         </button></td>
     </tr>
-    {{end}}
-{{end}}
-
-{{define "addResourceInputs"}}
-<label for="customer-id">Customer ID</label>
-<input id="customer-id" type="number" name="customer-id" required /><br />
-<label for="product-id">Product ID</label>
-<input id="product-id" type="number" name="product-id" required /><br />
-<label for="quantity">Quantity</label>
-<input id="quantity" type="number" name="quantity" required /><br />
+    {% endfor %}
+{% endblock %}
+{% block resource %}order{% endblock %}
+{% block form_title %}order{% endblock %}
+{% block action_link %}order{% endblock %}
+{% block addResourceInputs %}
+<div class="add-record-form-label">
+<label for="customer">Customer ID</label><br>
+<label for="product">Product ID</label><br>
+<label for="quantity">Quantity</label><br>
 <label for="progress">Progress</label>
+</div>
+<div class="add-record-form-input">
+<select id="customer" name="customer-id">
+{% for i in customerRecords %}
+<option value="{{ i.Id }}">{{ i.Id }} - {{ i.CustomerName }}</option>
+{% endfor %}
+</select><br />
+<select id="product" name="product-id">
+  {% for i in productRecords %}
+  <option value="{{ i.Id }}">{{ i.Id }} - {{ i.ProductName }}</option>
+  {% endfor %}
+</select><br>
+<input id="quantity" type="number" name="quantity" required /><br />
 <select id="progress" name="progress">
     <option value="1">Received</option>
     <option value="2">In Progress</option>
     <option value= "3">Delivered</option>
-</select><br>
-{{end}}
+</select>
+</div>
+{% endblock %}

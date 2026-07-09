@@ -16,6 +16,7 @@ table {
     border: 1px solid;
     text-align: center;
     margin: 0 auto;
+    overflow-x: auto;
 }
 
 th {

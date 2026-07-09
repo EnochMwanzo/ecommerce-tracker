@@ -1,15 +1,7 @@
-{{define "title"}}Employees{{end}}
+{% extends "base2.html" %}
+{% block title %} Employees {% endblock %}
 
-{{define "resource"}}employee{{end}}
-
-{{define "searchFields"}}
-<option value="employee-name">Employee Name</option>
-<option value="job-title">Job Title</option>
-<option value="department">Department</option>
-<option value="start-date">Start Date</option>
-{{end}}
-
-{{define "tableHeaders"}}
+{% block tableHeaders %}
 <th>Employee ID</th>
 <th>Employee Name</th>
 <th>Job Title</th>
@@ -18,42 +10,50 @@
 <th>Phone</th>
 <th>Company Email</th>
 <th>Salary</th>
-{{end}}
+{% endblock %}
 
-{{define "tableData"}}
-    {{range .data}}
-    <tr id="row-{{.Id}}" data-signals="{row{{.Id}}: {'id': {{.Id}}, 'employeeName': '{{.EmployeeName}}', 'jobTitle': '{{.JobTitle}}', 'department': '{{.Department}}', 'startDate': '{{.StartDate}}', 'phone': '{{.Phone}}', 'email': '{{.Email}}', 'salary': {{.Salary}} } }">
-        <td data-text="$row{{.Id}}.id"></td>
-        <td data-text="$row{{.Id}}.employeeName"></td>
-        <td data-text="$row{{.Id}}.jobTitle"></td>
-        <td data-text="$row{{.Id}}.department"></td>
-        <td data-text="$row{{.Id}}.startDate"></td>
-        <td data-text="$row{{.Id}}.phone"></td>
-        <td data-text="$row{{.Id}}.email"></td>
-        <td data-text="$row{{.Id}}.salary"></td>
+{% block tableData %}
+    {% for i in employeeRecords %}
+    <tr id="{{i.Id}}" data-signals="{row{{i.Id}}: {'id': {{i.Id}}, 'employeeName': '{{i.EmployeeName}}', 'jobTitle': '{{i.JobTitle}}', 'department': '{{i.Department}}', 'startDate': '{{i.StartDate}}', 'phone': '{{i.Phone}}', 'email': '{{i.Email}}', 'salary': {{i.Salary}} } }">
+        <td data-text="$row{{i.Id}}.id"></td>
+        <td data-text="$row{{i.Id}}.employeeName"></td>
+        <td data-text="$row{{i.Id}}.jobTitle"></td>
+        <td data-text="$row{{i.Id}}.department"></td>
+        <td data-text="$row{{i.Id}}.startDate"></td>
+        <td data-text="$row{{i.Id}}.phone"></td>
+        <td data-text="$row{{i.Id}}.email"></td>
+        <td class="currency" data-text="$row{{i.Id}}.salary"></td>
         <td>
             <button
-                data-on:click="confirm('Are you sure?') && @delete('/employees?id={{.Id}}')"
+                data-on:click="confirm('Are you sure?') && @delete('/employees?id={{i.Id}}')"
             >
                 Delete
             </button>
         </td>
         <td>
-            <button data-on:click="@get('/employees/edit?id={{.Id}}')">Edit</button>
+            <button data-on:click="@get('/employees/edit?id={{i.Id}}')">Edit</button>
         </td>
     </tr>
-    {{end}}
-{{end}}
-
-{{define "addResourceInputs"}}
-<label for="employee-name">Employee Name</label>
-<input id="employee-name" type="text" name="employee-name" required /><br />
-<label for="job-title">Job Title</label>
-<input id="job-title" type="text" name="job-title" required /><br />
-<label for="department">Department</label>
-<input id="department" type="text" name="department" required /><br />
-<label for="phone">Phone</label>
-<input id="phone" type="tel" name="phone" required /><br />
-<label for="email">Company Email</label>
-<input id="email" type="email" name="email" required />
-{{end}}
+    {% endfor %}
+{% endblock %}
+{% block resource %}employee{% endblock %}
+{% block form_title %}employee{% endblock %}
+{% block action_link %}employee{% endblock %}
+{% block addResourceInputs %}
+<div class="add-record-form-label">
+  <label for="employee-name">Employee Name</label><br />
+  <label for="job-title">Job Title</label><br />
+  <label for="department">Department</label><br />
+  <label for="phone">Phone</label><br />
+  <label for="email">Company Email</label><br />
+  <label for="salary">Salary</label>
+</div>
+<div class="add-record-form-input">
+  <input id="employee-name" type="text" name="employee-name" required /><br />
+  <input id="job-title" type="text" name="job-title" required /><br />
+  <input id="department" type="text" name="department" required /><br />
+  <input id="phone" type="tel" name="phone" required /><br />
+  <input id="email" type="email" name="email" required /><br />
+  <input id="salary" type="number" name="salary" required />
+</div>
+{% endblock %}

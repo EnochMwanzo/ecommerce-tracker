@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+      Ecommerce Tracker: Income Statement
+    </title>
+    <style>
+    body {
+        margin: 0 auto;
+        text-align: center;
+        font-family: serif;
+        width: 600px;
+    }
+    .grid-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+    }
+    table {
+        margin: 0 auto;
+    }
+    .category-name {
+        text-align: left;
+        padding: 0.5em 1em;
+    }
+    .amount {
+        text-align: right;
+    }
+    .total {
+        border-top: 1px solid;
+    }
+    </style>
+    <script
+      type="module"
+      src="https://cdn.jsdelivr.net/gh/starfederation/datastar@1.0.0-RC.8/bundles/datastar.js"
+    ></script><script
+      type="module"
+      src="https://cdn.jsdelivr.net/gh/starfederation/datastar@1.0.0-RC.8/bundles/datastar.js"
+    ></script>
+    <script>
+    function formatCurrency() {
+      var myClasses = document.querySelectorAll(".amount");
+      myClasses.forEach(i => {
+        i.innerText = Intl.NumberFormat("en-US", {style: "currency", currency: "USD" }).format(i.innerText/100);
+      });
+    }
+    window.addEventListener('load', formatCurrency)
+    </script>
+  </head>
+  <body>
+    <header>
+      <h1>Income Statement</h1>
+    </header>
+  <main>
+    <table>
+      <tr>
+        <!--loop through income statement and subtract from net sales to get gross profit and operating income-->
+        <td class="category-name">Total Sales</td>
+        <td class="amount">{{incomeStatement.TotalSales}}</td>
+      </tr>
+      <tr>
+        <td class="category-name">Cost of Goods Sold</td>
+        <td class="amount">{{incomeStatement.CostOfGoodsSold}}</td>
+      </tr>
+      <tr>
+        <td class="category-name"><b>Profit</b></td>
+        <td class="amount total" data-bind:profit>{{incomeStatement.TotalSales - incomeStatement.CostOfGoodsSold}}</td>
+      </tr>
+      <tr>
+        <td class="category-name">Promotion Expenses</td>
+        <td class="amount">{{incomeStatement.PromotionExpenses}}</td>
+      </tr>
+      <tr>
+        <td class="category-name">Selling & General Administrative Expenses</td>
+        <td class="amount">{{incomeStatement.SellingAndGeneralAdministrativeExpenses}}</td>
+      </tr>
+      <tr>
+        <td class="category-name"><b>Operating Income</b></td>
+        <td class=" amount total" data-bind:operating-income data-computed="$profit - {{incomeStatement.PromotionExpenses + incomeStatement.SellingAndGeneralAdministrativeExpenses}}"></td>
+      </tr>
+      <tr>
+        <td class="category-name"><b>Net Income</b></td>
+        <td class="amount" data-computed="$operatingIncome"></td>
+      </tr>
+    </table>
+  </main>
