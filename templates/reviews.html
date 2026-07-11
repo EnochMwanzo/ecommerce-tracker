@@ -1,41 +1,45 @@
-{{define "title"}}Reviews{{end}}
+{% extends "base2.html" %}
+{% block title %} Reviews {% endblock %}
 
-{{define "resource"}}review{{end}}
-
-{{define "searchFields"}}
-<option value="order-id">Order ID</option>
-<option value="rating">Rating</option>
-<option value="review">Review</option>
-{{end}}
-
-{{define "tableHeaders"}}
+{% block tableHeaders %}
 <th>Order ID</th>
 <th>Rating</th>
 <th>Review</th>
-{{end}}
+{% endblock %}
 
-{{define "tableData"}}
-    {{range .data}}
-    <tr id="row-{{.OrderId}}">
-        <td data-bind:order-id>{{.OrderId}}</td>
-        <td data-bind:rating>{{.Rating}}</td>
-        <td data-bind:review>{{.Review}}</td>
+{% block tableData %}
+    {% for i in reviewRecords %}
+    <tr id="row-{{i.OrderId}}">
+        <td data-bind:order-id>{{i.OrderId}}</td>
+        <td data-bind:rating>{{i.Rating}}</td>
+        <td data-bind:review>{{i.Review}}</td>
         <td>
             <button
-                data-on:click="confirm('Are you sure?') && @delete('/reviews?id={{.OrderId}}')"
+                data-on:click="confirm('Are you sure?') && @delete('/reviews?id={{i.OrderId}}')"
             >
                 Delete
             </button>
         </td>
     </tr>
-    {{end}}
-{{end}}
+    {% endfor %}
+{% endblock %}
 
-{{define "addResourceInputs"}}
-<label for="order-id">Order ID</label>
-<input id="order-id" type="number" name="order-id" required /><br />
-<label for="rating">Rating</label>
-<input id="rating" type="number" min="1" max="5" name="rating" required /><br />
+{% block resource %}review{% endblock %}
+{% block form_title %}review{% endblock %}
+{% block action_link %}review{% endblock %}
+{% block addResourceInputs %}
+<div class="add-record-form-label">
+<label for="order-id">Order ID</label><br>
+<label for="rating">Rating</label><br>
 <label for="review">Review</label>
-<input id="review" type="text" name="review" required /><br>
-{{end}}
+</div>
+<div class="add-record-form-input">
+  <select id="order-id" name="order-id" required>
+  {% for i in orderInformationRecords %}
+  <option value="{{i.OrderId}}">Order {{i.OrderId}} - {{i.CustomerName}}</option>
+  {% endfor %}
+  </select><br />
+  <input id="rating" type="number" min="1" max="5" name="rating" required /><br />
+  <input id="review" type="text" name="review" required /><br>
+</div>
+{% endblock %}

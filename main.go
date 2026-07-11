@@ -3,7 +3,6 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"html/template"
 	"log"
 	"net/http"
 
@@ -258,7 +257,7 @@ func customers(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, rowErr.Error(), http.StatusBadRequest)
 			return
 		}
-		rows, err = db.Query("SELECT customers.id, customer_name, COALESCE(ROUND(SUM(total),2),0) AS lifetime_value, (SELECT COUNT(*) FROM orders WHERE customer_id = customers.id) AS number_of_orders FROM customers JOIN orders on customer_id = customers.id GROUP BY customers.id ORDER BY customers.id")
+		rows, err = db.Query("SELECT customers.id, customer_name, COALESCE(ROUND(SUM(total),2),0) AS lifetime_value, (SELECT COUNT(*) FROM orders WHERE customer_id = customers.id) AS number_of_orders, (SELECT SUM(total) - SUM(cost_of_goods_sold) FROM orders GROUP BY customer_id) AS net_profit FROM customers JOIN orders on customer_id = customers.id GROUP BY customers.id ORDER BY customers.id")
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
@@ -267,7 +266,7 @@ func customers(w http.ResponseWriter, r *http.Request) {
 		var rfm []Customer
 		for rows.Next() {
 			var rfmRecord Customer
-			if err := rows.Scan(&rfmRecord.Id, &rfmRecord.CustomerName, &rfmRecord.LifetimeValue, &rfmRecord.NumberOfOrders); err != nil {
+			if err := rows.Scan(&rfmRecord.Id, &rfmRecord.CustomerName, &rfmRecord.LifetimeValue, &rfmRecord.NumberOfOrders, &rfmRecord.NetProfit); err != nil {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
 			}
@@ -282,6 +281,13 @@ func customers(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, rowErr.Error(), http.StatusBadRequest)
 			return
 		}
+		rows, err = db.Query("SELECT customer_id, SUM(total) - SUM(cost_of_goods_sold) AS net_profit FROM orders GROUP BY customer_id")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		defer rows.Close()
+
 		jinja, err := gonja.FromFile("templates/customers.html")
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -700,7 +706,7 @@ func employees(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, rowErr.Error(), http.StatusBadRequest)
 			return
 		}
-		jinja, err := gonja.FromFile("templates/employees.html")
+		template, err := gonja.FromFile("templates/employees.html")
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -708,7 +714,7 @@ func employees(w http.ResponseWriter, r *http.Request) {
 		data := exec.NewContext(map[string]any{
 			"employeeRecords": employeeRecords,
 		})
-		jinja.Execute(w, data)
+		template.Execute(w, data)
 	case "POST":
 		result, err := db.Exec("INSERT INTO employees (employee_name, job_title, department, phone, company_email, salary) VALUES (?,?,?,?,?,?*100)", r.FormValue("employee-name"), r.FormValue("job-title"), r.FormValue("department"), r.FormValue("phone"), r.FormValue("company-email"), r.FormValue("salary"))
 		if err != nil {
@@ -861,7 +867,7 @@ func orders(w http.ResponseWriter, r *http.Request) {
 		var orderRecords []Order
 		for rows.Next() {
 			var orderFields Order
-			if err := rows.Scan(&orderFields.Id, &orderFields.CustomerId, &orderFields.ProductId, &orderFields.Quantity, &orderFields.Total, &orderFields.Progress, &orderFields.OrderDate); err != nil {
+			if err := rows.Scan(&orderFields.Id, &orderFields.CustomerId, &orderFields.ProductId, &orderFields.Quantity, &orderFields.Total, &orderFields.Progress, &orderFields.OrderDate, &orderFields.CostOfGoodsSold); err != nil {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
 			}
@@ -876,16 +882,9 @@ func orders(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, rowErr.Error(), http.StatusInternalServerError)
 			return
 		}
-		// calculate profit margin and COGS
+		// calculate profit margin
 		for i, v := range orderRecords {
-			// weighted avg COGS of 1 unit
-			if err = db.QueryRow("SELECT AVG(unit_cost * quantity/SUM(quantity)) AS weighted_avg_cogs FROM inventory_Costing WHERE product_id = ?", v.ProductId).Scan(&orderRecords[i].CostOfGoodsSold); err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-			// multiply by quantity to get total cogs
-			orderRecords[i].CostOfGoodsSold = orderRecords[i].CostOfGoodsSold * v.Quantity
-			orderRecords[i].OrderProfitMargin = ((v.Total - v.CostOfGoodsSold) / v.Total) * 100
+			orderRecords[i].OrderProfitMargin = v.Total - v.CostOfGoodsSold
 		}
 		// product name and id
 		rows, err = db.Query("SELECT id, product_name FROM products")
@@ -943,7 +942,7 @@ func orders(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		data := exec.NewContext(map[string]any{
-			"data":            orderRecords,
+			"orderRecords":    orderRecords,
 			"productRecords":  productRecords,
 			"customerRecords": customerRecords,
 		})
@@ -952,13 +951,56 @@ func orders(w http.ResponseWriter, r *http.Request) {
 		var productPrice int
 		pid := r.FormValue("product-id")
 		db.QueryRow("SELECT price FROM products WHERE id = ?", pid).Scan(&productPrice)
-		//, quantity FROM products JOIN orders ON products.id = orders.product_id
-		result, err := db.Exec("INSERT INTO orders (customer_id, product_id, quantity, total, progress, order_date) VALUES (?,?,?,?*?, ?, CURRENT_DATE())",
+		// calculate weighted average cost of goods sold
+		rows, err = db.Query("SELECT unit_cost, quantity, SUM(quantity) AS weights FROM inventory_costing WHERE product_id=? AND inventory_type=1 GROUP BY unit_cost, quantity", pid)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		defer rows.Close()
+		type Weight struct {
+			UnitCost             int
+			Quantity             int
+			SumQuantity          int
+			CostTimesQuantity    int
+			SumCostTimesQuantity int
+		}
+		var weights []Weight
+		for rows.Next() {
+			var weight Weight
+			if err := rows.Scan(&weight.UnitCost, &weight.Quantity, &weight.SumQuantity); err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			weights = append(weights, weight)
+		}
+		if err := rows.Err(); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		rowErr := rows.Close()
+		if rowErr != nil {
+			http.Error(w, rowErr.Error(), http.StatusInternalServerError)
+			return
+		}
+		for i, v := range weights {
+			weights[i].CostTimesQuantity = v.UnitCost * int((float32(v.Quantity) / float32(v.SumQuantity)))
+		}
+		var sumCostTimesQuantity int
+		for _, v := range weights {
+			sumCostTimesQuantity += v.CostTimesQuantity
+		}
+		var weightedAverage int
+		weightedAverage = int(float32(sumCostTimesQuantity) / float32(len(weights)))
+		// insert order
+		result, err := db.Exec("INSERT INTO orders (customer_id, product_id, quantity, total, progress, order_date, cost_of_goods_sold) VALUES (?,?,?,?*?, ?, CURRENT_DATE(), ?*?)",
 			r.FormValue("customer-id"),
 			r.FormValue("product-id"),
 			r.FormValue("quantity"),
 			r.FormValue("quantity"), productPrice,
-			r.FormValue("progress"))
+			r.FormValue("progress"),
+			r.FormValue("quantity"), weightedAverage,
+		)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
@@ -966,19 +1008,19 @@ func orders(w http.ResponseWriter, r *http.Request) {
 		id, err := result.LastInsertId()
 		if err != nil {
 			log.Printf("error: %v, %v", id, err.Error())
-
 		}
-		// record orders in journal entry; redit inventory/debit COGS, and then credit sales and debit cash/AR
-		result, err = db.Exec("INSERT INTO journal_entries (entry_date, debit_account, credit_account, debit, credit, notes) VALUES (CURRENT_DATE(),?,?,ROUND(?*?,2),ROUND(?*?,2),?),(CURRENT_DATE(),?,?,ROUND(?*?,2),ROUND(?*?,2),?)",
+		// record orders in journal entry; credit inventory/debit COGS, and then credit sales and debit cash/AR
+		result, err = db.Exec("INSERT INTO journal_entries (entry_date, debit_account, credit_account, debit, credit, notes) VALUES (CURRENT_DATE(),?,?,?*?,?*?,?),(CURRENT_DATE(),?,?,?*?,?*?,?)",
 			1101,
 			2301,
 			r.FormValue("quantity"), productPrice,
 			r.FormValue("quantity"), productPrice,
 			fmt.Sprintf("order from customer %v for product %v", r.FormValue("customer-id"), r.FormValue("product-id")),
+			// inventory & cogs
 			1104,
 			2401,
-			r.FormValue("quantity"), productPrice,
-			r.FormValue("quantity"), productPrice,
+			r.FormValue("quantity"), weightedAverage,
+			r.FormValue("quantity"), weightedAverage,
 			"decrease inventory from sale",
 		)
 		if err != nil {
@@ -990,17 +1032,12 @@ func orders(w http.ResponseWriter, r *http.Request) {
 			log.Printf("error: %v, %v", id, err.Error())
 		}
 		// update inventory costing
-		var averageCost int
-		err = db.QueryRow("SELECT AVG(unit_cost * quantity/SUM(quantity)) AS weighted_avg_cogs FROM inventory_costing").Scan(&averageCost)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		result, err = db.Exec("INSERT INTO inventory_costing (time_period, inventory_type, quantity, unit_cost, total) VALUES (CURRENT_DATE(),?,?,?*100, ?*?*100)",
+		result, err = db.Exec("INSERT INTO inventory_costing (product_id, time_period, inventory_type, quantity, unit_cost, total) VALUES (?, CURRENT_DATE(),?,?,?, ?*?)",
+			r.FormValue("product-id"),
 			2,
 			r.FormValue("quantity"),
-			averageCost,
-			r.FormValue("quantity"), averageCost,
+			weightedAverage,
+			r.FormValue("quantity"), weightedAverage,
 		)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -1063,6 +1100,7 @@ func orders(w http.ResponseWriter, r *http.Request) {
 		sse := datastar.NewSSE(w, r)
 		sse.Redirect("/orders")
 	case "PATCH":
+		// todo: might reove the ability to edit orders since that would affect many other parts of the program
 		orderPatchSignals := &OrderPatch{}
 		if err := datastar.ReadSignals(r, orderPatchSignals); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -1215,10 +1253,44 @@ func reviews(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, rowErr.Error(), http.StatusBadRequest)
 			return
 		}
-		t := template.Must(template.ParseFiles("templates/base.html", "templates/reviews.html", "templates/styles.css"))
-		t.Execute(w, map[string]any{
-			"data": reviewRecords,
+		rows, err = db.Query("SELECT orders.id, customers.customer_name FROM orders JOIN customers ON orders.customer_id = customers.id")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		defer rows.Close()
+		type OrderInformation struct {
+			OrderId      int
+			CustomerName string
+		}
+		var orderInformationRecords []OrderInformation
+		for rows.Next() {
+			var orderInformationFields OrderInformation
+			if err := rows.Scan(&orderInformationFields.OrderId, &orderInformationFields.CustomerName); err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			orderInformationRecords = append(orderInformationRecords, orderInformationFields)
+		}
+		if err := rows.Err(); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		rowErr = rows.Close()
+		if rowErr != nil {
+			http.Error(w, rowErr.Error(), http.StatusBadRequest)
+			return
+		}
+		template, err := gonja.FromFile("templates/reviews.html")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		data := exec.NewContext(map[string]any{
+			"reviewRecords":           reviewRecords,
+			"orderInformationRecords": orderInformationRecords,
 		})
+		template.Execute(w, data)
 	case "POST":
 		result, err := db.Exec("INSERT INTO reviews (order_id, rating, review) VALUES (?,?,?)", r.FormValue("order-id"), r.FormValue("rating"), r.FormValue("review"))
 		if err != nil {
@@ -1400,19 +1472,11 @@ func finances(w http.ResponseWriter, r *http.Request) {
 			if generalLedger[count].AccountCode == journalEntryRecords[i].DebitAccount {
 				generalLedger[count].Ledger.JournalEntryID[i] = journalEntryRecords[i].Id
 				generalLedger[count].Ledger.CreditOrDebit[i] = "Debit"
-				if i == 0 {
-					generalLedger[count].Ledger.Balance[i] += journalEntryRecords[i].Debit
-				} else {
-					generalLedger[count].Ledger.Balance[i] = generalLedger[count].Ledger.Balance[i-1] + journalEntryRecords[i].Debit
-				}
+				generalLedger[count].Ledger.Balance[i] = journalEntryRecords[i].Debit
 			} else if generalLedger[count].AccountCode == journalEntryRecords[i].CreditAccount {
 				generalLedger[count].Ledger.JournalEntryID[i] = journalEntryRecords[i].Id
 				generalLedger[count].Ledger.CreditOrDebit[i] = "Credit"
-				if i == 0 {
-					generalLedger[count].Ledger.Balance[i] -= journalEntryRecords[i].Credit
-				} else {
-					generalLedger[count].Ledger.Balance[i] = generalLedger[count].Ledger.Balance[i-1] - journalEntryRecords[i].Credit
-				}
+				generalLedger[count].Ledger.Balance[i] = journalEntryRecords[i].Credit
 			}
 		}
 		count += 1
@@ -1496,7 +1560,10 @@ func finances(w http.ResponseWriter, r *http.Request) {
 		cashFlowStatement.TimePeriod = timePeriod
 
 		// if the account is an asset, add it. query or for loop
-		db.QueryRow("SELECT COALESCE(SUM(debit), 0) FROM journal_entries  WHERE debit_Account IN (SELECT account_code FROM chart_of_accounts WHERE account_type = 1)").Scan(cashFlowStatement.CashSpentOnAssets)
+		if err = db.QueryRow("SELECT COALESCE(SUM(debit), 0) FROM journal_entries  WHERE debit_account IN (SELECT account_code FROM chart_of_accounts WHERE account_type = 1)").Scan(&cashFlowStatement.CashSpentOnAssets); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 
 		cashFlowStatement.OperatingCashFlow = (incomeStatement.NetIncome + incomeStatement.DepreciationAndAmoritization) - cashFlowStatement.CashSpentOnAssets
 
@@ -1582,43 +1649,8 @@ func finances(w http.ResponseWriter, r *http.Request) {
 }
 
 func changeLedger(w http.ResponseWriter, r *http.Request) {
-	ledgerIndex := r.FormValue("ledger-index")
-	data := exec.NewContext(map[string]any{"ledgerIndex": ledgerIndex})
-	patchLedgerString, err := gonja.FromString(fmt.Sprintf(`
-		<div id="general-ledger-table">
-		<h3>{{generalLedger[%v].AccountName}}</h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Journal Entry ID</th>
-                        <th>Credit or Debit</th>
-                        <th>Balance</th>
-                    </tr>
-                </thead>
-                <tbody>
-					{%% for i in generalLedger[%v].Ledger %%}
-                    <tr>
-                        <td>{{i.JournalEntryID}}</td>
-                        <td>{{i.CreditOrDebit}}</td>
-                        <td>{{i.Balance}}</td>
-                    </tr>{%% endfor %%}
-                </tbody>
-            </table>
-			</div>
-            `, ledgerIndex, ledgerIndex))
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		log.Println(err.Error())
-		return
-	}
-	newpatchLedgerString, err := patchLedgerString.ExecuteToString(data)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		log.Println(err.Error())
-		return
-	}
 	sse := datastar.NewSSE(w, r)
-	sse.PatchElements(newpatchLedgerString)
+	sse.Redirectf("/finances?display-ledger=%v", r.FormValue("ledger-index"))
 }
 
 func main() {

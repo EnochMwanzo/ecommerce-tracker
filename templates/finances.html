@@ -25,6 +25,7 @@
         }
         window.addEventListener('load', formatCurrency)
         window.addEventListener('load', formatPercent)
+        window.onbeforeunload = formatCurrency
         </script>
         <style>
         body {
@@ -238,6 +239,7 @@
                     <tr>
                         <td>{{i}}</td>
                         <td>{{displayedLedger.Ledger.CreditOrDebit[loop.index0]}}
+                          <!--Keep a total, adding debits and subtracting credits-->
                         <td class="currency">{{displayedLedger.Ledger.Balance[loop.index0]}}</td>
                     </tr>
                     {% endif %}
@@ -247,6 +249,7 @@
             </div>
             <hr>
             <h2 id="cash-flow-statement">Cash Flow</h2>
+            <a href="/finances?statement=cash" target="_blank">Generate Statement (new tab)</a>
             <table>
                 <thead>
                     <tr>

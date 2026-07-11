@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+      Ecommerce Tracker: Balance Sheet
+    </title>
+    <style>
+    body {
+        margin: 0 auto;
+        text-align: center;
+        font-family: serif;
+        width: 600px;
+    }
+    .grid-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+    }
+    table {
+        margin: 0 auto;
+        width: 80%;
+    }
+    .category-name {
+        text-align: left;
+    }
+    .amount {
+        text-align: right;
+    }
+    .assets {
+        display: grid;
+        height: 100%;
+    }
+    .total {
+        border-top: 1px solid;
+    }
+    </style>
+    <script
+      type="module"
+      src="https://cdn.jsdelivr.net/gh/starfederation/datastar@1.0.0-RC.8/bundles/datastar.js"
+    ></script>
+    <script>
+    function formatCurrency() {
+      var myClasses = document.querySelectorAll(".amount");
+      myClasses.forEach(i => {
+        i.innerText = Intl.NumberFormat("en-US", {style: "currency", currency: "USD" }).format(i.innerText/100);
+      });
+    }
+    window.addEventListener('load', formatCurrency)
+    </script>
+  </head>
+  <body>
+    <header>
+      <h1>Cash Flow Statement</h1>
+    </header>
+    <main>
+      <h2>Cash Flows from Operations</h2>
+      <table>
+        <tr>
+          <td class="category-name">Net Income</td>
+          <td class="amount total">{{incomeStatement.NetIncome}}</td>
+        </tr>
+        <tr>
+          <td class="category-name">Depreciation & Amoritization</td>
+          <td class="amount">{{incomeStatement.DepreciationAndAmoritization}}</td>
+        </tr>
+        <tr>
+          <td class="category-name"><i>Net Cash from operations</i></td>
+          <td class="amount total">{{incomeStatement.NetIncome + incomeStatement.DepreciationAndAmoritization}}</td>
+        </tr>
+      </table>
+      <h2>Cash Flows from Investing</h2>
+      <table>
+        <tr>
+          <td class="category-name">Capital Expenditures</td>
+          <td class="amount">{{cashFlowStatement.CashSpentOnAssets}}</td>
+        </tr>
+        <tr>
+          <td class="category-name"><i>Net Cash used for Investing</i></td>
+          <td class="amount total">{{cashFlowStatement.CashSpentOnAssets}}</td>
+        </tr>
+      </table>
+      <h2>Cash Flows from Financing</h2>
+      <table>
+        <tr>
+          <td class="category-name">Proceeds from issuing debt</td>
+          <td class="amount">{{cashFlowStatement.LongTermDebt}}</td>
+        </tr>
+        <tr>
+          <td class="category-name"><i>Net Cash from Financing</i></td>
+          <td class="amount total">{{cashFlowStatement.LongTermDebt}}</td>
+        </tr>
+      </table>
+      <hr>
+      <div class=".grid-container">
+        <div class="category-name"><b>Net increase in cash: <span class="amount">{{incomeStatement.NetIncome + incomeStatement.DepreciationAndAmoritization - cashFlowStatement.CashSpentOnAssets + cashFlowStatement.LongTermDebt}}</span></b></div>
+      </div>
+    </main>
+  </body>
+</html>

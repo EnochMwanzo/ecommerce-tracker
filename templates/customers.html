@@ -12,9 +12,9 @@
     ></script>
     <script>
     function formatCurrency() {
-      var myClasses = document.querySelectorAll(".number");
+      var myClasses = document.querySelectorAll(".currency");
       myClasses.forEach(i => {
-        i.innerText = Intl.NumberFormat("en-US", {style: "currency", currency: "USD" }).format(i.innerText);
+        i.innerText = Intl.NumberFormat("en-US", {style: "currency", currency: "USD" }).format(i.innerText/100);
       });
     }
     window.addEventListener('load', formatCurrency)
@@ -199,6 +199,7 @@
       <th>name</th>
       <th>lifetime value</th>
       <th>number of orders</th>
+      <th>Net profit from Customer</th>
     </tr>
     </thead>
     <tbody>
@@ -208,6 +209,7 @@
       <td>{{i.CustomerName}}</td>
       <td class="currency">{{i.LifetimeValue}}</td>
       <td>{{i.NumberOfOrders}}</td>
+      <td class="currency">{{i.NetProfit}}</td>
     </tr>
   {% endfor %}
   </tbody>

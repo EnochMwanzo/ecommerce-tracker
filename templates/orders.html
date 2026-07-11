@@ -11,7 +11,7 @@
 <th>Progress</th>
 <th>Order Date</th>
 <th>Cost of Goods Sold</th>
-<th>Order Profit Margin</th>
+<th>Order Profit</th>
 {% endblock %}
 
 {% block tableData %}
@@ -25,10 +25,12 @@
         <td data-text="$row{{i.Id}}.progress"></td>
         <td data-text="$row{{i.Id}}.orderDate"></td>
         <td class="currency">{{i.CostOfGoodsSold}}</td>
-        <td data-text="$row{{i.Id}}.orderProfitMargin"></td>
+        <td class="percent margin">{{i.OrderProfitMargin/1000|round(1)}}</td>
+        <td>
             <button data-on:click="confirm('Are you sure?') && @delete('/orders?id={{i.Id}}&quantity={{i.Quantity}}')">
                 Delete
             </button>
+        </td>
         <td><button data-on:click="@patch('/orders/edit?id={{i.Id}}')">
             Edit
         </button></td>
