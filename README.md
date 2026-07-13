@@ -1,5 +1,7 @@
 # ecommerce-tracker
-A business tool to track data related to customers, orders, and finances. The program has six main sections.
+A simple business tool to track data related to customers, orders, and finances. 
+
+This program was developed for learning and is expirimental. It may not be suitable to replace an enterprise resource planning suite or an accounting system.
 ## Installstion
 1. Download and extract the program and supporting files from the <a href="https://github.com/EnochMwanzo/ecommerce-tracker/releases/tag/v.0.1.0-alpha">releases page</a>.
 2. Ecommerce Tracker uses MySQL. <a href="https://dev.mysql.com/downloads/mysql/">You can download it here.</a> There are post-installation steps you may need to complete depending on whether you are on <a href="https://dev.mysql.com/doc/refman/9.7/en/windows-postinstallation.html">Windows</a> or <a href="https://dev.mysql.com/doc/refman/9.7/en/macos-installation-launchd.html">macOS</a>.
@@ -31,7 +33,7 @@ View your product information and inventory costing. The program currently uses 
 <p align="center">
 <img src="/screenshots/orders.png" style="width:75%;">
 </p>
-When a new order is added, a journal entry is created. The inventory costing table is updated once the progress is `delivered`.
+When a new order is added, a two journal entries are created to account for the sale and inventory reduction. The cost of goods sold column of the inventory costing table is updated as well. You can edit the progress column to update the current status of orders.
 
 ### Employees
 <p align="center">
@@ -43,7 +45,7 @@ You can store information about employees here.
 <p align="center">
 <img src="/screenshots/reviews.png" style="width:75%;">
 </p>
-Save what customer rating and what they say about the their orders here.
+Save customer ratings and what they say about the their orders here.
 
 ### Finances
 <p align="center">
@@ -53,11 +55,11 @@ This page has the chart of accounts, general ledger, the financial statements, a
 
 You can add journal entries by entering the codes and the amount for the accounts being debited and credited.
 
-The general ledger is created by going through all the journal entries and keeping track of debits and credits for each account.
+The general ledger is created by going through all the journal entries and tracking a total of the debits and credits for each account.
 
-The journal entries are used to calculate the balances for the general ledger and trial balance. The income and balance sheet financial statements are based on the adjusted trial balance. The cash flow statment is focused on operating cash flow, and calculated from the income statement and balance sheet.
+The general ledger are used to calculate the balances unadjusted balance on the trial balance. The income and balance sheet financial statements are based on the adjusted trial balance. The cash flow statment is focused on operating cash flow, and calculated from the income statement and balance sheet.
 
-You can generate financial statements to prit or save as PDF 
+You can generate financial statements pages to print or save as PDF 
 <div style="display: grid; grid-template-columns: 1fr 1fr;">
 <div align="center" style="width:45%;">
   <img src="/screenshots/cash-flow-statement.png" style="width:30%;"> <img src="/screenshots/income-statement.png" style="width:30%;"><img src="/screenshots/balance-sheet.png" style="width:30%;">
