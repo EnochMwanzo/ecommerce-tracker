@@ -716,7 +716,7 @@ func employees(w http.ResponseWriter, r *http.Request) {
 		})
 		template.Execute(w, data)
 	case "POST":
-		result, err := db.Exec("INSERT INTO employees (employee_name, job_title, department, phone, company_email, salary) VALUES (?,?,?,?,?,?*100)", r.FormValue("employee-name"), r.FormValue("job-title"), r.FormValue("department"), r.FormValue("phone"), r.FormValue("company-email"), r.FormValue("salary"))
+		result, err := db.Exec("INSERT INTO employees (employee_name, job_title, department, start_data, phone, company_email, salary) VALUES (?,?,?,?,?,?*100)", r.FormValue("employee-name"), r.FormValue("job-title"), r.FormValue("department"), r.FormValue("start-date"), r.FormValue("phone"), r.FormValue("company-email"), r.FormValue("salary"))
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
@@ -759,6 +759,7 @@ func employees(w http.ResponseWriter, r *http.Request) {
 }
 
 func editEmployee(w http.ResponseWriter, r *http.Request) {
+	// TODO: when table is replaced with form, currency should be formatted
 	var employeeBeingEdited Employee
 	id := r.FormValue("id")
 	err := db.QueryRow("SELECT * FROM employees WHERE id = ?", id).Scan(&employeeBeingEdited.Id, &employeeBeingEdited.EmployeeName, &employeeBeingEdited.JobTitle, &employeeBeingEdited.Department, &employeeBeingEdited.StartDate, &employeeBeingEdited.Phone, &employeeBeingEdited.Email, &employeeBeingEdited.Salary)
@@ -776,11 +777,11 @@ func editEmployee(w http.ResponseWriter, r *http.Request) {
 			<td><input name="new-start-date" type="date" value="%v" data-bind:new-start-date required></td>
 			<td><input name="new-phone" type="phone" value="%v" data-bind:new-phone required></td>
 			<td><input name="new-email" type="email" value="%v" data-bind:new-email required></td>
-			<td><input name="salary" type="number" value="%v" data-bind:new-salary required></td>
+			<td class="currency"><input name="salary" type="number" value="%v" data-bind:new-salary required></td>
 			<td><button data-on:click="@get('/employees')">Cancel</button></td>
 			<td><button data-on:click="@patch('/employees?id=%v')">Update</button></td>
 		</tr>
-		`, id, employeeBeingEdited.Id, employeeBeingEdited.EmployeeName, employeeBeingEdited.JobTitle, employeeBeingEdited.Department, employeeBeingEdited.StartDate, employeeBeingEdited.Phone, employeeBeingEdited.Email, employeeBeingEdited.Salary, id))
+		`, id, employeeBeingEdited.Id, employeeBeingEdited.EmployeeName, employeeBeingEdited.JobTitle, employeeBeingEdited.Department, employeeBeingEdited.StartDate, employeeBeingEdited.Phone, employeeBeingEdited.Email, employeeBeingEdited.Salary/100, id))
 }
 
 /*

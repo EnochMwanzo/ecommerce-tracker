@@ -22,7 +22,7 @@
         <td data-text="$row{{i.Id}}.startDate"></td>
         <td data-text="$row{{i.Id}}.phone"></td>
         <td data-text="$row{{i.Id}}.email"></td>
-        <td class="currency" data-text="$row{{i.Id}}.salary"></td>
+        <td class="currency">{{i.Salary}}</td>
         <td>
             <button
                 data-on:click="confirm('Are you sure?') && @delete('/employees?id={{i.Id}}')"
@@ -44,6 +44,7 @@
   <label for="employee-name">Employee Name</label><br />
   <label for="job-title">Job Title</label><br />
   <label for="department">Department</label><br />
+  <label for="start-date">Start Date</label><br />
   <label for="phone">Phone</label><br />
   <label for="email">Company Email</label><br />
   <label for="salary">Salary</label>
@@ -52,6 +53,7 @@
   <input id="employee-name" type="text" name="employee-name" required /><br />
   <input id="job-title" type="text" name="job-title" required /><br />
   <input id="department" type="text" name="department" required /><br />
+  <input id="start-date" type="date" name="start-date" required /><br />
   <input id="phone" type="tel" name="phone" required /><br />
   <input id="email" type="email" name="email" required /><br />
   <input id="salary" type="number" name="salary" required />

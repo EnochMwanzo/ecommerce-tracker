@@ -14,18 +14,25 @@
         function formatCurrency() {
           var myClasses = document.querySelectorAll(".currency");
           myClasses.forEach(i => {
-            i.innerText = Intl.NumberFormat("en-US", {style: "currency", currency: "USD" }).format(i.innerText/100);
+            var currencyType = parseFloat(i.innerText)
+            if (!isNaN(currencyType)) {
+              i.innerText = Intl.NumberFormat("en-US", {style: "currency", currency: "USD" }).format(i.innerText/100);
+            }
           });
-        }
+        };
         function formatPercent() {
           var num = document.querySelectorAll(".percent");
           num.forEach(i => {
-            i.innerText = Intl.NumberFormat("en-US",{style: 'percent', minimumFractionDigits:1}).format(i.innerText)
+            const percentType = parseFloat(i.innerText)
+            if  (!isNaN(percentType)) {
+              i.innerText = Intl.NumberFormat("en-US",{style: 'percent', minimumFractionDigits:1}).format(i.innerText)
+            }
           });
         }
         window.addEventListener('load', formatCurrency)
         window.addEventListener('load', formatPercent)
-        window.onbeforeunload = formatCurrency
+        window.addEventListener('click', formatCurrency)
+        window.addEventListener('click', formatPercent)
         </script>
         <style>
         body {
