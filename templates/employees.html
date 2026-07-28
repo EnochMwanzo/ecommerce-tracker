@@ -1,18 +1,21 @@
 {% extends "base2.html" %}
+{% block resource %}Employee{% endblock %}
 {% block title %} Employees {% endblock %}
-
-{% block tableHeaders %}
-<th>Employee ID</th>
-<th>Employee Name</th>
-<th>Job Title</th>
-<th>Department</th>
-<th>Start Date</th>
-<th>Phone</th>
-<th>Company Email</th>
-<th>Salary</th>
-{% endblock %}
-
-{% block tableData %}
+{% block content %}
+<table>
+  <thead>
+  <tr>
+    <th>Employee ID</th>
+    <th>Employee Name</th>
+    <th>Job Title</th>
+    <th>Department</th>
+    <th>Start Date</th>
+    <th>Phone</th>
+    <th>Company Email</th>
+    <th>Salary</th>
+  </tr>
+  </thead>
+  <tbody>
     {% for i in employeeRecords %}
     <tr id="{{i.Id}}" data-signals="{row{{i.Id}}: {'id': {{i.Id}}, 'employeeName': '{{i.EmployeeName}}', 'jobTitle': '{{i.JobTitle}}', 'department': '{{i.Department}}', 'startDate': '{{i.StartDate}}', 'phone': '{{i.Phone}}', 'email': '{{i.Email}}', 'salary': {{i.Salary}} } }">
         <td data-text="$row{{i.Id}}.id"></td>
@@ -35,11 +38,13 @@
         </td>
     </tr>
     {% endfor %}
-{% endblock %}
-{% block resource %}employee{% endblock %}
-{% block form_title %}employee{% endblock %}
-{% block action_link %}employee{% endblock %}
-{% block addResourceInputs %}
+  </tbody>
+</table>
+<h2>
+  Add an Employee
+</h2>
+<form method="POST" action="/employees?form=employee">
+<div class="add-record-form">
 <div class="add-record-form-label">
   <label for="employee-name">Employee Name</label><br />
   <label for="job-title">Job Title</label><br />
@@ -58,4 +63,7 @@
   <input id="email" type="email" name="email" required /><br />
   <input id="salary" type="number" name="salary" required />
 </div>
+<input type="submit" value="Submit" />
+</div>
+</form>
 {% endblock %}

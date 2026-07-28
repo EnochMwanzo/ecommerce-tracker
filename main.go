@@ -1654,6 +1654,10 @@ func changeLedger(w http.ResponseWriter, r *http.Request) {
 	sse.Redirectf("/finances?display-ledger=%v", r.FormValue("ledger-index"))
 }
 
+func images(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "templates/pictures/customers.png")
+}
+
 func main() {
 	config, err := ini.Load("config.ini")
 	if err != nil {
@@ -1704,6 +1708,8 @@ func main() {
 
 	http.HandleFunc("/finances", finances)
 	http.HandleFunc("/finances/change-ledger", changeLedger)
+
+	http.HandleFunc("/images", images)
 
 	log.Printf("Visit http://%v for the program", port)
 	log.Fatal(http.ListenAndServe(port, nil))

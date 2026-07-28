@@ -184,24 +184,7 @@
         <div class="wrapper">
         <main>
         <h1>{% block resource %}{% endblock %}s</h1>
-            <div style="line-height:1.5em;">&#8202;</div>
-            <table>
-                <thead>
-                    <tr>
-                        {% block tableHeaders %}{% endblock %}
-                    </tr>
-                </thead>
-                <tbody>
-                    {% block tableData %}{% endblock %}
-                </tbody>
-            </table>
-            <h2>Add a {% block form_title %}{% endblock %}</h2>
-            <form method="POST" action="/{% block action_link %}{% endblock %}s">
-                <div class="add-record-form">
-                {% block addResourceInputs %}{% endblock %}
-                </div>
-                <input type="submit" value="Submit" />
-            </form>
+            {% block content %}{% endblock %}
         </main>
         <footer>
           <a href="https://github.com/EnochMwanzo/ecommerce-tracker/">Ecommerce Tracker</a>
