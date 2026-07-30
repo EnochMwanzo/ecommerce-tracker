@@ -1,20 +1,22 @@
 {% extends "base2.html" %}
+{% block resource %}Order{% endblock %}
 {% block title %} Orders {% endblock %}
-
-
-{% block tableHeaders %}
-<th>Order ID</th>
-<th>Customer ID</th>
-<th>Product ID</th>
-<th>Quantity</th>
-<th>Total</th>
-<th>Progress</th>
-<th>Order Date</th>
-<th>Cost of Goods Sold</th>
-<th>Order Profit</th>
-{% endblock %}
-
-{% block tableData %}
+{% block content %}
+<table>
+  <thead>
+  <tr>
+    <th>Order ID</th>
+    <th>Customer ID</th>
+    <th>Product ID</th>
+    <th>Quantity</th>
+    <th>Total</th>
+    <th>Progress</th>
+    <th>Order Date</th>
+    <th>Cost of Goods Sold</th>
+    <th>Order Profit</th>
+  </tr>
+  </thead>
+  <tbody>
     {% for i in orderRecords %}
     <tr id="{{i.Id}}" data-signals="{row{{i.Id}}: {'id': {{i.Id}}, 'customerId': {{i.CustomerId}}, 'productId': {{i.ProductId}}, 'quantity': {{i.Quantity}}, 'total': {{i.Total}}, 'progress': '{{i.Progress}}', 'orderDate': '{{i.OrderDate}}', 'costOfGoodsSold': {{i.CostOfGoodsSold}}, 'orderProfitMargin': {{i.OrderProfitMargin}} }}">
         <td data-text="$row{{i.Id}}.id"></td>
@@ -36,33 +38,38 @@
         </button></td>
     </tr>
     {% endfor %}
-{% endblock %}
-{% block resource %}order{% endblock %}
-{% block form_title %}order{% endblock %}
-{% block action_link %}order{% endblock %}
-{% block addResourceInputs %}
-<div class="add-record-form-label">
-<label for="customer">Customer ID</label><br>
-<label for="product">Product ID</label><br>
-<label for="quantity">Quantity</label><br>
-<label for="progress">Progress</label>
-</div>
-<div class="add-record-form-input">
-<select id="customer" name="customer-id">
-{% for i in customerRecords %}
-<option value="{{ i.Id }}">{{ i.Id }} - {{ i.CustomerName }}</option>
-{% endfor %}
-</select><br />
-<select id="product" name="product-id">
-  {% for i in productRecords %}
-  <option value="{{ i.Id }}">{{ i.Id }} - {{ i.ProductName }}</option>
+  </tbody>
+</table>
+<h2>
+  Add an Order
+</h2>
+<div class="add-record-form">
+<form method="POST" action="/orders">
+  <div class="add-record-form-label">
+  <label for="customer">Customer ID</label><br>
+  <label for="product">Product ID</label><br>
+  <label for="quantity">Quantity</label><br>
+  <label for="progress">Progress</label>
+  </div>
+  <div class="add-record-form-input">
+  <select id="customer" name="customer-id">
+  {% for i in customerRecords %}
+  <option value="{{ i.Id }}">{{ i.Id }} - {{ i.CustomerName }}</option>
   {% endfor %}
-</select><br>
-<input id="quantity" type="number" name="quantity" required /><br />
-<select id="progress" name="progress">
-    <option value="1">Received</option>
-    <option value="2">In Progress</option>
-    <option value= "3">Delivered</option>
-</select>
+  </select><br />
+  <select id="product" name="product-id">
+    {% for i in productRecords %}
+    <option value="{{ i.Id }}">{{ i.Id }} - {{ i.ProductName }}</option>
+    {% endfor %}
+  </select><br>
+  <input id="quantity" type="number" name="quantity" required /><br />
+  <select id="progress" name="progress">
+      <option value="1">Received</option>
+      <option value="2">In Progress</option>
+      <option value= "3">Delivered</option>
+  </select>
+  </div>
+<input type="submit" value="Submit" />
+</form>
 </div>
 {% endblock %}

@@ -1,0 +1,21 @@
+{% extends "base2.html" %}
+{% block resource %}Manufacturing{% endblock %}
+{% block title %} Manufacturing {% endblock %}
+{% block content %}
+<table>
+  <thead>
+    <tr>
+      <th>Time Period</th>
+      <th>Work in Progress Inventory</th>
+      <th>Direct Material</th>
+      <th>Direct Labor</th>
+      <th>Manufacturig Overhead</th>
+      <th>Cost of Work in Progress</th>
+      <th>Cost of Goods Manufactured</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for i in manufacturingRecords %}
+    {% endfor %}
+</table>
+{% endblock %}

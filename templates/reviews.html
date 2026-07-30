@@ -1,13 +1,16 @@
 {% extends "base2.html" %}
+{% block resource %}Review{% endblock %}
 {% block title %} Reviews {% endblock %}
-
-{% block tableHeaders %}
-<th>Order ID</th>
-<th>Rating</th>
-<th>Review</th>
-{% endblock %}
-
-{% block tableData %}
+{% block content %}
+<table>
+  <thead>
+  <tr>
+    <th>Order ID</th>
+    <th>Rating</th>
+    <th>Review</th>
+  </tr>
+  </thead>
+  <tbody>
     {% for i in reviewRecords %}
     <tr id="row-{{i.OrderId}}">
         <td data-bind:order-id>{{i.OrderId}}</td>
@@ -22,24 +25,28 @@
         </td>
     </tr>
     {% endfor %}
-{% endblock %}
-
-{% block resource %}review{% endblock %}
-{% block form_title %}review{% endblock %}
-{% block action_link %}review{% endblock %}
-{% block addResourceInputs %}
-<div class="add-record-form-label">
-<label for="order-id">Order ID</label><br>
-<label for="rating">Rating</label><br>
-<label for="review">Review</label>
-</div>
-<div class="add-record-form-input">
-  <select id="order-id" name="order-id" required>
-  {% for i in orderInformationRecords %}
-  <option value="{{i.OrderId}}">Order {{i.OrderId}} - {{i.CustomerName}}</option>
-  {% endfor %}
-  </select><br />
-  <input id="rating" type="number" min="1" max="5" name="rating" required /><br />
-  <input id="review" type="text" name="review" required /><br>
+  </tbody>
+</table>
+<h2>
+  Add an Review
+</h2>
+<div class="add-record-form">
+<form method="POST" action="/reviews">
+    <div class="add-record-form-label">
+      <label for="order-id">Order ID</label><br>
+      <label for="rating">Rating</label><br>
+      <label for="review">Review</label>
+    </div>
+    <div class="add-record-form-input">
+      <select id="order-id" name="order-id" required>
+      {% for i in orderInformationRecords %}
+      <option value="{{i.OrderId}}">Order {{i.OrderId}} - {{i.CustomerName}}</option>
+      {% endfor %}
+      </select><br />
+      <input id="rating" type="number" min="1" max="5" name="rating" required /><br />
+      <input id="review" type="text" name="review" required /><br>
+    </div>
+    <input type="submit" value="Submit" />
+  </form>
 </div>
 {% endblock %}
