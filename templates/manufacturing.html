@@ -1,21 +1,83 @@
 {% extends "base2.html" %}
 {% block resource %}Manufacturing{% endblock %}
-{% block title %} Manufacturing {% endblock %}
+<h1>Manufacturing</h1>>
 {% block content %}
+<h2>Cost of Goods Manufactured</h2>
 <table>
   <thead>
     <tr>
       <th>Time Period</th>
-      <th>Work in Progress Inventory</th>
+      <th>Starting Work in Progress Inventory</th>
       <th>Direct Material</th>
       <th>Direct Labor</th>
       <th>Manufacturig Overhead</th>
+      <th>Total Manufacturing Costs</th>
       <th>Cost of Work in Progress</th>
+      <th>Ending Work in Progress Inventory</th>
       <th>Cost of Goods Manufactured</th>
     </tr>
   </thead>
   <tbody>
-    {% for i in manufacturingRecords %}
+    <td>May 2026</td>
+    <td>$10000.00</td>
+    <td> $1000.15</td>
+    <td> $7500.12</td><!-- multiply cost of wage by wip inventory-->
+    <td>  $416.10</td><!-- yearly depreciation divided by length of time period-->
+    <td> $8916.37</td><!-- sum of other 3 cells-->
+    <td>$18916.37</td><!-- total manufacturig costs + wip inventory-->
+    <td> $5000.00</td>
+    <td>$13916.37</td><!-- cost of wip - ending wip-->
+  </tbody>
+</table>
+<h2>Costs</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Cost</th>
+      <th>Classification</th>
+      <th>Variable or Fixed</th>
+      <th>Amount</th>
+      <th>Output Range</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for i in costRecords %}
+    <tr>
+    <td>{{i.CostObject}}</td>
+    <td>{{i.Classification}}</td>
+    <td>{{i.VariableOrFixed}}</td>
+    <td class="currency">{{i.Amount}}</td>
+    <td>{{i.OutputRange}}</td>
+    </tr>
     {% endfor %}
 </table>
+<h2>Add a cost</h2>
+<form method="POST" action="/manufacturing">
+  <div class="add-record-form">
+    <div class="add-record-form-label">
+      <label for="cost-object">Cost Object</label><br>
+      <label for="classification">Classification</label><br>
+      <label for="variable-or-fixed">Variable Or Fixed</label><br>
+      <label for="amount">Amount</label><br>
+      <label for="output-range">Output Range</label>
+    </div>
+    <div class="add-record-form-input">
+      <input id="cost-object" type="text" name="cost-object" required /><br>
+      <select id="classification" name="classification">
+        <option value="1">Direct Materials</option>
+        <option value="2">Direct Labor</option>
+        <option value="3">Indirect Materials</option>
+        <option value="4">Indirect Labor</option>
+        <option value="5">Overhead</option>
+      </select><br>
+      <select id="variable-or-fixed" name="variable-or-fixed">
+        <option value="1">Variable Cost</option>
+        <option value="2">Fixed Cost</option>
+      </select><br>
+      <input id="amount" type="number" name="amount" step="0.01" required /><br>
+      <input id="output-range" type="text" name="output-range" required />
+    </div>
+  </div>
+  <input type="submit" value="Submit" />
+</form>
 {% endblock %}

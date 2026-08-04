@@ -54,6 +54,14 @@ CREATE TABLE `journal_entries` (
   `notes` text,
   PRIMARY KEY (`id`)
 );
+DROP TABLE IF EXISTS `costs`;
+CREATE TABLE `costs` (
+  `cost_name` text,
+  `classification` enum('direct labor','direct material','indirect labor','indirect material','overhead') DEFAULT NULL,
+  `variable_or_fixed` enum('variable cost','fixed cost') DEFAULT NULL,
+  `amount` int DEFAULT NULL,
+  `output_range` text
+);
 DROP TABLE IF EXISTS `products`;
 CREATE TABLE `products` (
   `id` int NOT NULL AUTO_INCREMENT,

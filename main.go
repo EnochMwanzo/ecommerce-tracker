@@ -62,6 +62,15 @@ type InventoryCosting struct {
 	QuantityCount int    `json:"quantityCount"`
 	TotalCount    int    `json:"totalCount"`
 }
+
+type Cost struct {
+	CostObject      string
+	Classification  string
+	VariableOrFixed string
+	Amount          int
+	OutputRange     string
+}
+
 type Employee struct {
 	Id           int    `json:"id"`
 	EmployeeName string `json:"employeeName"`
@@ -105,24 +114,6 @@ type Review struct {
 	Review  string `json:"review"`
 }
 
-//	type Transaction struct {
-//		Id              int     `json:"id"`
-//		Counterparty    string  `json:"counterparty"`
-//		TransactionDate string  `json:"transactionDate"`
-//		Amount          float32 `json:"amount"`
-//		AccountType     string  `json:"accountType"`
-//		Category        string  `json:"rating"`
-//		Notes           string  `json:"notes"`
-//	}
-//
-//	type TransactionPatch struct {
-//		NewCounterparty      string  `json:"newCounterparty"`
-//		NewTransactionDadete string  `json:"newTransactionDate"`
-//		NewAmount            float32 `json:"newAmount"`
-//		NewAccountType       string  `json:"newAccountType"`
-//		NewCategory          string  `json:"newRating"`
-//		NewNotes             string  `json:"newNotes"`
-//	}
 type CashFlowStatements struct {
 	TimePeriod        string `json:"notes"`
 	OperatingCashFlow int    `json:"operatingCashFlow"`
@@ -170,19 +161,26 @@ type GeneralLedger struct {
 		Balance        [100]int
 	}
 }
+type BreakevenAnalysis struct {
+	ProductId                 int
+	ContributionMarginPerUnit int
+	ContributionMarginRatio   int
+	BreakevenPointInUnits     int
+	BreakevenPointInSales     int
+}
 type FinancialRatios struct {
 	TimePeriod                 string
-	CurrentRatio               float32
-	AcidTestRatio              float32
-	InventoryTurnover          float32
-	InventoryDays              float32
-	AccountsReceivableTurnover float32
-	CollectionPeriod           float32
-	DebtRatio                  float32
-	GrossProfitPercentage      float32
-	ReturnOnSales              float32
-	ReturnOnAssets             float32
-	CashConversionCycle        float32
+	CurrentRatio               int
+	AcidTestRatio              int
+	InventoryTurnover          int
+	InventoryDays              int
+	AccountsReceivableTurnover int
+	CollectionPeriod           int
+	DebtRatio                  int
+	GrossProfitPercentage      int
+	ReturnOnSales              int
+	ReturnOnAssets             int
+	CashConversionCycle        int
 }
 type JournalEntries struct {
 	Id            int
@@ -281,13 +279,6 @@ func customers(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, rowErr.Error(), http.StatusBadRequest)
 			return
 		}
-		rows, err = db.Query("SELECT customer_id, SUM(total) - SUM(cost_of_goods_sold) AS net_profit FROM orders GROUP BY customer_id")
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		defer rows.Close()
-
 		jinja, err := gonja.FromFile("templates/customers.html")
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -595,7 +586,7 @@ func products(w http.ResponseWriter, r *http.Request) {
 func editProduct(w http.ResponseWriter, r *http.Request) {
 	var productBeingEdited Product
 	id := r.FormValue("id")
-	err := db.QueryRow("SELECT * FROM products WHERE id = ?", id).Scan(&productBeingEdited.Id, &productBeingEdited.ProductName, &productBeingEdited.Description, &productBeingEdited.RetailPrice, &productBeingEdited.Stock, &productBeingEdited.MinimumOrderQuantity)
+	err := db.QueryRow("SELECT * FROM products WHERE id = ?", id).Scan(&productBeingEdited.Id, &productBeingEdited.ProductName, &productBeingEdited.Description, &productBeingEdited.RetailPrice, &productBeingEdited.MinimumOrderQuantity)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -679,6 +670,56 @@ func editProduct(w http.ResponseWriter, r *http.Request) {
 		sse.PatchElements(searchResult)
 	}
 */
+func manufacturing(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case "GET":
+		rows, err := db.Query("SELECT * FROM costs")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		defer rows.Close()
+		var costRecords []Cost
+		for rows.Next() {
+			var costFields Cost
+			if err := rows.Scan(&costFields.CostObject, &costFields.Classification, &costFields.VariableOrFixed, &costFields.Amount, &costFields.OutputRange); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			costRecords = append(costRecords, costFields)
+		}
+		if err := rows.Err(); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		rowErr := rows.Close()
+		if rowErr != nil {
+			http.Error(w, rowErr.Error(), http.StatusBadRequest)
+			return
+		}
+		template, err := gonja.FromFile("templates/manufacturing.html")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		data := exec.NewContext(map[string]any{
+			"costRecords": costRecords,
+		})
+		template.Execute(w, data)
+	case "POST":
+		result, err := db.Exec("INSERT INTO costs (cost, classification, variable_of_fixed, amount, output_range) VALUES (?,?,?,?*100,?)", r.FormValue("cost-name"), r.FormValue("classification"), r.FormValue("variable-of-fixed"), r.FormValue("amount"), r.FormValue("output-range"))
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		id, err := result.LastInsertId()
+		if err != nil {
+			log.Printf("error: %v, %v", id, err.Error())
+		}
+		http.Redirect(w, r, "/manufacturing", http.StatusFound)
+	}
+
+}
 func employees(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
@@ -1574,12 +1615,28 @@ func finances(w http.ResponseWriter, r *http.Request) {
 		financialRatios := &FinancialRatios{}
 		financialRatios.TimePeriod = timePeriod
 		// sum of balance sheet accounts where acc type == assets over sum of balance sheet accounts where acc type == liability
-		financialRatios.CurrentRatio = float32((balanceSheet.Cash + balanceSheet.Inventory + balanceSheet.AccountsReceivable + balanceSheet.PrepaidExpenses) / max(1, (balanceSheet.AccountsPayable+balanceSheet.AccruedExpenses+balanceSheet.UnearnedRevenue+balanceSheet.LongTermDebt)))
+		financialRatios.CurrentRatio = ((balanceSheet.Cash + balanceSheet.Inventory + balanceSheet.AccountsReceivable + balanceSheet.PrepaidExpenses) * 100) / max(1, (balanceSheet.AccountsPayable+balanceSheet.AccruedExpenses+balanceSheet.UnearnedRevenue+balanceSheet.LongTermDebt))
 		// cash and a/r over sum bal sheet where acc type == liability
-		financialRatios.AcidTestRatio = float32((balanceSheet.Cash + balanceSheet.AccountsReceivable) / max(1, (balanceSheet.AccountsPayable+balanceSheet.AccruedExpenses+balanceSheet.UnearnedRevenue+balanceSheet.LongTermDebt)))
+		financialRatios.AcidTestRatio = ((balanceSheet.Cash + balanceSheet.AccountsReceivable) * 100) / max(1, (balanceSheet.AccountsPayable+balanceSheet.AccruedExpenses+balanceSheet.UnearnedRevenue+balanceSheet.LongTermDebt))
 
-		financialRatios.GrossProfitPercentage = float32((incomeStatement.TotalSales-cashFlowStatement.OperatingExpenses)/max(1, incomeStatement.TotalSales)) * 100
+		financialRatios.GrossProfitPercentage = ((incomeStatement.TotalSales - cashFlowStatement.OperatingExpenses) * 100) / max(1, incomeStatement.TotalSales)
 
+		var breakEvenAnalysis [2]BreakevenAnalysis
+		// for all products, multiply by 100 to calculate everything in cents
+		const RETAIL_PRICE = 20
+		const FIXED_COSTS = 50000
+		const UNIT_COST = 7.25
+		breakEvenAnalysis[0].ProductId = 4
+		breakEvenAnalysis[0].ContributionMarginPerUnit = (RETAIL_PRICE * 100) - (UNIT_COST * 100)
+		breakEvenAnalysis[0].ContributionMarginRatio = (breakEvenAnalysis[0].ContributionMarginPerUnit * 100) / (RETAIL_PRICE * 100)
+		breakEvenAnalysis[0].BreakevenPointInUnits = (FIXED_COSTS * 100) / (breakEvenAnalysis[0].ContributionMarginPerUnit)
+		breakEvenAnalysis[0].BreakevenPointInSales = breakEvenAnalysis[0].BreakevenPointInUnits * (RETAIL_PRICE * 100)
+
+		breakEvenAnalysis[1].ProductId = 5
+		breakEvenAnalysis[1].ContributionMarginPerUnit = (RETAIL_PRICE + 10*100) - ((UNIT_COST * 2) * 100)
+		breakEvenAnalysis[1].ContributionMarginRatio = (breakEvenAnalysis[1].ContributionMarginPerUnit * 100) / (RETAIL_PRICE + 10*100)
+		breakEvenAnalysis[1].BreakevenPointInUnits = (FIXED_COSTS * 100) / (breakEvenAnalysis[1].ContributionMarginPerUnit)
+		breakEvenAnalysis[1].BreakevenPointInSales = breakEvenAnalysis[1].BreakevenPointInUnits * (RETAIL_PRICE + 10*100)
 		data := exec.NewContext(map[string]interface{}{
 			"journalEntries":    journalEntryRecords,
 			"trialBalance":      trialBalance,
@@ -1591,6 +1648,7 @@ func finances(w http.ResponseWriter, r *http.Request) {
 			"financialRatios":   financialRatios,
 			"accountMap":        accountMap,
 			"displayedLedger":   displayedLedger,
+			"breakevenAnalysis": breakEvenAnalysis,
 		})
 		switch r.FormValue("statement") {
 		case "income":
@@ -1697,6 +1755,8 @@ func main() {
 	http.HandleFunc("/orders", orders)
 	//	http.HandleFunc("/orders/search", searchOrders)
 	http.HandleFunc("/orders/edit", editOrder)
+
+	http.HandleFunc("/manufacturing", manufacturing)
 
 	http.HandleFunc("/employees", employees)
 	//	http.HandleFunc("/employees/search", searchEmployees)

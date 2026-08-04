@@ -25,15 +25,13 @@
           var num = document.querySelectorAll(".percent");
           num.forEach(i => {
             const percentType = parseFloat(i.innerText)
-            if  (!percentType.isNaN()) {
-              i.innerText = Intl.NumberFormat("en-US",{style: 'percent', minimumFractionDigits:1}).format(i.innerText)
+            if  (!isNaN(percentType)) {
+              i.innerText = Intl.NumberFormat("en-US",{style: 'percent', minimumFractionDigits:1}).format(i.innerText/100)
             }
           });
         }
         window.addEventListener('load', formatCurrency)
         window.addEventListener('load', formatPercent)
-        window.addEventListener('click', formatCurrency)
-        window.addEventListener('click', formatPercent)
         </script>
         <style>
         body {
@@ -48,11 +46,11 @@
         }
 
         table {
-            border: 1px solid;
             text-align: center;
             margin: 0 auto;
-            overflow-x: auto;
+            overflow-x: hidden;
             background: white;
+            border-spacing: 0;
         }
 
         th {
@@ -61,17 +59,30 @@
         }
 
         td {
-            border: 1px solid;
             padding: 1em;
         }
 
-        tr:nth-of-type(even) {
+        tbody tr:nth-of-type(even) {
             background: #eee;
+        }
+
+        thead tr {
+            background: #eee;
+        }
+
+        tbody tr:nth-of-type(odd) {
+            background: white;
         }
 
         .page-links {
             background: turquoise;
             margin: 0;
+            width: 100%;
+        }
+
+        .page-links ul {
+            margin: 0;
+            z-index: 2
         }
 
         input {
@@ -140,30 +151,47 @@
         form select {
             margin: 1em 0;
         }
-        .debit-account {
-            position: relative;
-            bottom: 0.7em;
-            border: none;
+
+        .tooltip1 {
+          position: relative;
+          display: inline-block;
+          border-bottom: 1px dotted black;
         }
 
-        .credit-account {
-            position: relative;
-            top: 0.7em;
-            border: none;
+        .tooltip1 .tooltiptext {
+          visibility: hidden;
+          width: 120px;
+          background-color: #555;
+          color: #fff;
+          text-align: center;
+          border-radius: 6px;
+          padding: 5px 0;
+          position: absolute;
+          z-index: 1;
+          bottom: 125%;
+          left: 50%;
+          margin-left: -60px;
+          opacity: 0;
+          transition: opacity 0.3s;
         }
 
-        .debit {
-            position: relative;
-            bottom: 0.7em;
-            border: none;
+        .tooltip1 .tooltiptext::after {
+          content: "";
+          position: absolute;
+          top: 100%;
+          left: 50%;
+          margin-left: -5px;
+          border-width: 5px;
+          border-style: solid;
+          border-color: #555 transparent transparent transparent;
         }
 
-        .credit {
-            position: relative;
-            top: 0.7em;
-            border: none;
-        }
+        .tooltip1:hover .tooltiptext {
+          visibility: visible;
+          opacity: 1;
+
         </style>
+        {% block extra_styles %}{% endblock %}
     </head>
     <div>
     <body>
@@ -177,13 +205,14 @@
                 <a href="/orders"><li class="navbar-item">Orders</li></a>
                 <a href="/reviews"><li class="navbar-item">Reviews</li></a>
                 <a href="/finances"><li class="navbar-item">Finances</li></a>
+                <a href="/manufacturing"><li class="navbar-item">Manufacturing</li></a>
                 <!--<li class="navbar-item"><a href="#">Creators</a></li>-->
             </ul>
         </nav>
         </header>
         <div class="wrapper">
         <main>
-        <h1>{% block resource %}{% endblock %}s</h1>
+        <h1>{% block resource %}{% endblock %}</h1>
             {% block content %}{% endblock %}
         </main>
         <footer>
