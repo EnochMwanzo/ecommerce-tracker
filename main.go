@@ -63,7 +63,20 @@ type InventoryCosting struct {
 	TotalCount    int    `json:"totalCount"`
 }
 
-type Cost struct {
+type BillOfMaterials struct {
+	ProductId           int
+	Material            string
+	Supplier            string
+	UnitPrice           int
+	UnitVolume          int
+	Metric              string
+	Quantity            int
+	Stock               int
+	VolumeForOneProduct int
+	CashAvailable       int
+}
+
+type LaborAndOverheadCosts struct {
 	CostObject      string
 	Classification  string
 	VariableOrFixed string
@@ -80,6 +93,13 @@ type Employee struct {
 	Phone        string `json:"phone"`
 	Email        string `json:"email"`
 	Salary       int    `json:"salary"`
+}
+
+type Labor struct {
+	TimePeriod          string
+	NumberOfWorkers     int
+	CostPerJob          int
+	JobsPerWorkerPerDay int
 }
 type EmployeePatch struct {
 	NewEmployeeName string `json:"newEmployeeName"`
@@ -162,11 +182,13 @@ type GeneralLedger struct {
 	}
 }
 type BreakevenAnalysis struct {
-	ProductId                 int
-	ContributionMarginPerUnit int
-	ContributionMarginRatio   int
-	BreakevenPointInUnits     int
-	BreakevenPointInSales     int
+	ProductId                  int
+	ContributionMarginPerUnit  int
+	ContributionMarginRatio    int
+	BreakevenPointInUnits      int
+	BreakevenPointInSales      int
+	UnitsNeededToAchieveTarget int
+	PercentageOfSales          int
 }
 type FinancialRatios struct {
 	TimePeriod                 string
@@ -671,6 +693,20 @@ func editProduct(w http.ResponseWriter, r *http.Request) {
 	}
 */
 func manufacturing(w http.ResponseWriter, r *http.Request) {
+	rows, err = db.Query("SELECT * FROM bill_of_materials")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	var bomRecords []BillOfMaterials
+	for rows.Next() {
+		var bomFields BillOfMaterials
+		if err := rows.Scan(&bomFields.Material, &bomFields.Supplier, &bomFields.UnitPrice, &bomFields.UnitVolume, &bomFields.Metric, &bomFields.VolumeForOneProduct, &bomFields.Quantity, &bomFields.Stock); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		bomRecords = append(bomRecords, bomFields)
+	}
 	switch r.Method {
 	case "GET":
 		rows, err := db.Query("SELECT * FROM costs")
@@ -679,9 +715,9 @@ func manufacturing(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		defer rows.Close()
-		var costRecords []Cost
+		var costRecords []LaborAndOverheadCosts
 		for rows.Next() {
-			var costFields Cost
+			var costFields LaborAndOverheadCosts
 			if err := rows.Scan(&costFields.CostObject, &costFields.Classification, &costFields.VariableOrFixed, &costFields.Amount, &costFields.OutputRange); err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
@@ -697,28 +733,101 @@ func manufacturing(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, rowErr.Error(), http.StatusBadRequest)
 			return
 		}
+		var totalBom int
+		var totalDirectMaterials int
+		for _, v := range bomRecords {
+			totalBom += v.Quantity * v.UnitPrice
+			totalDirectMaterials += v.Stock * v.UnitPrice
+		}
+		if err := rows.Err(); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		rowErr = rows.Close()
+		if rowErr != nil {
+			http.Error(w, rowErr.Error(), http.StatusBadRequest)
+			return
+		}
 		template, err := gonja.FromFile("templates/manufacturing.html")
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 		data := exec.NewContext(map[string]any{
-			"costRecords": costRecords,
+			"costRecords":          costRecords,
+			"billOfMaterials":      bomRecords,
+			"totalBillOfMaterials": totalBom,
+			"totalDirectMaterials": totalDirectMaterials,
 		})
 		template.Execute(w, data)
 	case "POST":
-		result, err := db.Exec("INSERT INTO costs (cost, classification, variable_of_fixed, amount, output_range) VALUES (?,?,?,?*100,?)", r.FormValue("cost-name"), r.FormValue("classification"), r.FormValue("variable-of-fixed"), r.FormValue("amount"), r.FormValue("output-range"))
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		id, err := result.LastInsertId()
-		if err != nil {
-			log.Printf("error: %v, %v", id, err.Error())
-		}
-		http.Redirect(w, r, "/manufacturing", http.StatusFound)
-	}
+		switch r.FormValue("form") {
+		case "cost":
+			result, err := db.Exec("INSERT INTO costs (cost_object, classification, variable_or_fixed, amount, output_range) VALUES (?,?,?,?*100,?)", r.FormValue("cost-object"), r.FormValue("classification"), r.FormValue("variable-or-fixed"), r.FormValue("amount"), r.FormValue("output-range"))
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			id, err := result.LastInsertId()
+			if err != nil {
+				log.Printf("error: %v, %v", id, err.Error())
+			}
+		case "finished-goods":
+			// each materials stock needs to be reduced by the amount required to make the number of goods finished
+			// example: material a -> 5 in stock, b -> 8 in stock, one product is finished, 1 a and 2 b's are needed to make it, so update a stock to 4 and b to 6
+			// how do you know the amount required, because each product does not use full unit, so you need number of products 1 unit can make
+			// how to get number of products from 1 unit -> divide unit volue by volume for 1 product, and then what about remainder
+			// then you toke number of products for 1 unit, if the number of goods finished is greater, then reduce material stock by 1
+			// example: each purchase of a comes with 2 a's and each purchase of b comes with 2 b's, so you need 2 products to use up 1 unit purchase of a
+			// so amount required = (finished goods * VolumeForOneProduct) / UnitVolume, because (1p * 1a) / 2 = 0 purchase unit of a used, but if 2 products were made then 1 unit of a was used
 
+			// you need the vol for each material
+			var finishedGoodsRecords []BillOfMaterials
+			rows, err := db.Query("SELECT volume_for_one_product FROM bill_of_materials WHERE product_id = ?", r.FormValue("product-id"))
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			for rows.Next() {
+				var finishedGoods BillOfMaterials
+				if err = rows.Scan(&finishedGoods.Material, &finishedGoods.VolumeForOneProduct); err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+				finishedGoodsRecords = append(finishedGoodsRecords, finishedGoods)
+			}
+			if err := rows.Err(); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			rowErr := rows.Close()
+			if rowErr != nil {
+				http.Error(w, rowErr.Error(), http.StatusBadRequest)
+			}
+			for _, v := range finishedGoodsRecords {
+				result, err := db.Exec("UPDATE bill_of_materials SET stock = stock - (?*?) / unit_volume WHERE material = ?", v.VolumeForOneProduct, r.FormValue("number-of-goods-finished"), v.Material)
+				if err != nil {
+					http.Error(w, err.Error(), http.StatusBadRequest)
+					return
+				}
+				id, err := result.LastInsertId()
+				if err != nil {
+					log.Printf("error: %v, %v", id, err.Error())
+				}
+			}
+		default:
+			result, err := db.Exec("INSERT INTO bill_of_materials (material, supplier, unit_price, unit_volume, quantity) VALUES (?,?,?*100,?,?)", r.FormValue("material"), r.FormValue("supplier"), r.FormValue("unit-price"), r.FormValue("unit-volume"), r.FormValue("quantity"))
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			id, err := result.LastInsertId()
+			if err != nil {
+				log.Printf("error: %v, %v", id, err.Error())
+			}
+		}
+	}
+	http.Redirect(w, r, "/manufacturing", http.StatusFound)
 }
 func employees(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
@@ -1619,24 +1728,30 @@ func finances(w http.ResponseWriter, r *http.Request) {
 		// cash and a/r over sum bal sheet where acc type == liability
 		financialRatios.AcidTestRatio = ((balanceSheet.Cash + balanceSheet.AccountsReceivable) * 100) / max(1, (balanceSheet.AccountsPayable+balanceSheet.AccruedExpenses+balanceSheet.UnearnedRevenue+balanceSheet.LongTermDebt))
 
-		financialRatios.GrossProfitPercentage = ((incomeStatement.TotalSales - cashFlowStatement.OperatingExpenses) * 100) / max(1, incomeStatement.TotalSales)
+		financialRatios.GrossProfitPercentage = (incomeStatement.NetIncome * 100) / incomeStatement.TotalSales
 
 		var breakEvenAnalysis [2]BreakevenAnalysis
-		// for all products, multiply by 100 to calculate everything in cents
+		// for all prices, multiply by 100 to calculate everything in cents
 		const RETAIL_PRICE = 20
-		const FIXED_COSTS = 50000
-		const UNIT_COST = 7.25
+		const FIXED_COSTS = 50000    // sum of costs where variableorfixed == 2
+		const UNIT_COST = 7.25       // weighted average
+		const TARGET_PROFIT = 250000 // set in ui
 		breakEvenAnalysis[0].ProductId = 4
 		breakEvenAnalysis[0].ContributionMarginPerUnit = (RETAIL_PRICE * 100) - (UNIT_COST * 100)
 		breakEvenAnalysis[0].ContributionMarginRatio = (breakEvenAnalysis[0].ContributionMarginPerUnit * 100) / (RETAIL_PRICE * 100)
-		breakEvenAnalysis[0].BreakevenPointInUnits = (FIXED_COSTS * 100) / (breakEvenAnalysis[0].ContributionMarginPerUnit)
+		breakEvenAnalysis[0].BreakevenPointInUnits = (FIXED_COSTS * 100) / breakEvenAnalysis[0].ContributionMarginPerUnit
 		breakEvenAnalysis[0].BreakevenPointInSales = breakEvenAnalysis[0].BreakevenPointInUnits * (RETAIL_PRICE * 100)
+		breakEvenAnalysis[0].PercentageOfSales = 25
+		breakEvenAnalysis[0].UnitsNeededToAchieveTarget = ((TARGET_PROFIT * 100) / (breakEvenAnalysis[0].ContributionMarginPerUnit)) / (100 / breakEvenAnalysis[0].PercentageOfSales)
 
 		breakEvenAnalysis[1].ProductId = 5
-		breakEvenAnalysis[1].ContributionMarginPerUnit = (RETAIL_PRICE + 10*100) - ((UNIT_COST * 2) * 100)
-		breakEvenAnalysis[1].ContributionMarginRatio = (breakEvenAnalysis[1].ContributionMarginPerUnit * 100) / (RETAIL_PRICE + 10*100)
+		breakEvenAnalysis[1].ContributionMarginPerUnit = ((RETAIL_PRICE + 10) * 100) - ((UNIT_COST * 2) * 100)
+		breakEvenAnalysis[1].ContributionMarginRatio = (breakEvenAnalysis[1].ContributionMarginPerUnit * 100) / ((RETAIL_PRICE + 10) * 100)
 		breakEvenAnalysis[1].BreakevenPointInUnits = (FIXED_COSTS * 100) / (breakEvenAnalysis[1].ContributionMarginPerUnit)
-		breakEvenAnalysis[1].BreakevenPointInSales = breakEvenAnalysis[1].BreakevenPointInUnits * (RETAIL_PRICE + 10*100)
+		breakEvenAnalysis[1].BreakevenPointInSales = breakEvenAnalysis[1].BreakevenPointInUnits * ((RETAIL_PRICE + 10) * 100)
+		breakEvenAnalysis[1].PercentageOfSales = 75
+		breakEvenAnalysis[1].UnitsNeededToAchieveTarget = ((TARGET_PROFIT * 100) / (breakEvenAnalysis[1].ContributionMarginPerUnit)) * 100 / breakEvenAnalysis[1].PercentageOfSales
+
 		data := exec.NewContext(map[string]interface{}{
 			"journalEntries":    journalEntryRecords,
 			"trialBalance":      trialBalance,
@@ -1649,6 +1764,7 @@ func finances(w http.ResponseWriter, r *http.Request) {
 			"accountMap":        accountMap,
 			"displayedLedger":   displayedLedger,
 			"breakevenAnalysis": breakEvenAnalysis,
+			"targetProfit":      TARGET_PROFIT,
 		})
 		switch r.FormValue("statement") {
 		case "income":
@@ -1716,6 +1832,219 @@ func images(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "templates/pictures/customers.png")
 }
 
+func masterBudget(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case "GET":
+		var projectedUnits []int
+		var projectedSales [4]int
+		var price int
+		err := db.QueryRow("SELECT q1_units, q2_units, q3_units, q4_units,  (SELECT price FROM products WHERE id = product_id) AS projected_sales FROM master_budget").Scan(&projectedSales[0], &projectedSales[1], &projectedSales[2], &projectedSales[3], &price)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		for i, v := range projectedSales {
+			projectedUnits = append(projectedUnits, v)
+			projectedSales[i] = v * price
+		}
+		var projectedSalesTotal int
+		for _, v := range projectedSales {
+			projectedSalesTotal += v
+		}
+		/* materials */
+		var directMaterials []int
+		rows, err = db.Query("SELECT SUM((unit_price DIV unit_volume) * volume_for_one_product) FROM bill_of_materials GROUP BY product_id")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		for rows.Next() {
+			var directMaterialsRecord int
+			if err := rows.Scan(&directMaterialsRecord); err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			directMaterials = append(directMaterials, directMaterialsRecord)
+		}
+		if err := rows.Err(); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		rowErr := rows.Close()
+		if rowErr != nil {
+			http.Error(w, rowErr.Error(), http.StatusBadRequest)
+			return
+		}
+		directMaterials[0] = directMaterials[0] * projectedSales[0]
+		var directMaterialsTotal int
+		for _, v := range directMaterials {
+			directMaterialsTotal += v
+		}
+		/* labor */
+		var directLabor []int
+		rows, err = db.Query("SELECT cost_per_job FROM labor")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		for rows.Next() {
+			var directLaborRecord int
+			if err := rows.Scan(&directLaborRecord); err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			directLabor = append(directLabor, directLaborRecord)
+		}
+		if err := rows.Err(); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		rowErr = rows.Close()
+		if rowErr != nil {
+			http.Error(w, rowErr.Error(), http.StatusBadRequest)
+			return
+		}
+		var directLaborTotal int
+		for _, v := range directLabor {
+			directLaborTotal += v
+		}
+		// overhead
+		var overhead []int
+		rows, err = db.Query("SELECT SUM(amount) FROM overhead")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		for rows.Next() {
+			var overheadRecord int
+			if err := rows.Scan(&overheadRecord); err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			overhead = append(overhead, overheadRecord/4) // yearly overhead divided into four quarters
+		}
+		if err := rows.Err(); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		rowErr = rows.Close()
+		if rowErr != nil {
+			http.Error(w, rowErr.Error(), http.StatusBadRequest)
+			return
+		}
+		var overheadTotal int
+		for _, v := range overhead {
+			overheadTotal += v
+		}
+		/* production totals */
+		var productionTotals []int
+		for i, v := range directMaterials {
+			productionTotals = append(productionTotals, v+directLabor[i]+overhead[i])
+		}
+		productionTotalsTotal := directLaborTotal + directMaterialsTotal + overheadTotal
+		/* purchases */
+		var purchasedGoods []int
+		for i := 0; i < 4; i++ {
+			purchasedGoods = append(purchasedGoods, 0)
+		}
+		var purchasedGoodsTotal int
+		for _, v := range purchasedGoods {
+			purchasedGoodsTotal += v
+		}
+		// TODO
+		var costOfgoodsManufactured []int
+		for i := 0; i < 4; i++ {
+			costOfgoodsManufactured = append(costOfgoodsManufactured, 0)
+		}
+		var costOfGoodsSoldTotals []int
+		for i, v := range productionTotals {
+			costOfGoodsSoldTotals = append(costOfGoodsSoldTotals, v+purchasedGoods[i])
+		}
+		/* salaries */
+		var salaries []int
+		var salariesTotal int
+		err = db.QueryRow("SELECT SUM(salary) FROM employees").Scan(&salariesTotal)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		rowErr = rows.Close()
+		if rowErr != nil {
+			http.Error(w, rowErr.Error(), http.StatusBadRequest)
+			return
+		}
+		for i := 0; i < 4; i++ {
+			salaries = append(salaries, salariesTotal/4)
+		}
+		var promotion []int
+		for _, v := range projectedSales {
+			promotion = append(promotion, v*15/100)
+		}
+		var promotionTotal int
+		for _, v := range promotion {
+			promotionTotal += v
+		}
+		var sellingAndGeneralAdministrativeTotal []int
+		for _, v := range promotion {
+			sellingAndGeneralAdministrativeTotal = append(sellingAndGeneralAdministrativeTotal, v+(salariesTotal/4))
+		}
+		var EBITDA []int
+		for i, v := range projectedSales {
+			EBITDA = append(EBITDA, v-productionTotals[0]-costOfGoodsSoldTotals[0]-sellingAndGeneralAdministrativeTotal[i])
+		}
+		var EBITDA_Total int
+		for _, v := range EBITDA {
+			EBITDA_Total += v
+		}
+		// separate page for fixed assets
+		var depreciationAndAmoritization []int
+		for i := 0; i < 4; i++ {
+			depreciationAndAmoritization = append(depreciationAndAmoritization, 0)
+		}
+
+		var netIncome []int
+		for i, v := range EBITDA {
+			netIncome = append(netIncome, v-depreciationAndAmoritization[i])
+		}
+		template, err := gonja.FromFile("templates/master-budget.html")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			log.Println(err.Error())
+			return
+		}
+		data := exec.NewContext(map[string]interface{}{
+			"projectedSales":                       projectedSales,
+			"projectedUnits":                       projectedUnits,
+			"projectedSalesTotal":                  projectedSalesTotal,
+			"directMaterials":                      directMaterials,
+			"directMaterialsTotal":                 directMaterialsTotal,
+			"directLabor":                          directLabor,
+			"directLaborTotal":                     directLaborTotal,
+			"overhead":                             overhead,
+			"overheadTotal":                        overheadTotal,
+			"productionTotals":                     productionTotals,
+			"productionTotalsTotal":                productionTotalsTotal,
+			"purchasedGoods":                       purchasedGoods,
+			"costOfGoodsSoldTotals":                costOfGoodsSoldTotals,
+			"salaries":                             salaries,
+			"salariesTotal":                        salariesTotal,
+			"promotion":                            promotion,
+			"promotionTotal":                       promotionTotal,
+			"sellingAndGeneralAdministrativeTotal": sellingAndGeneralAdministrativeTotal,
+			"depreciationAndAmoritization":         depreciationAndAmoritization,
+			"netIncome":                            netIncome,
+			"EBITDA":                               EBITDA,
+			"EBITDA_Total":                         EBITDA_Total,
+		})
+		err = template.Execute(w, data)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			log.Println(err.Error())
+			return
+		}
+	}
+}
+
 func main() {
 	config, err := ini.Load("config.ini")
 	if err != nil {
@@ -1770,6 +2099,7 @@ func main() {
 	http.HandleFunc("/finances/change-ledger", changeLedger)
 
 	http.HandleFunc("/images", images)
+	http.HandleFunc("/master-budget", masterBudget)
 
 	log.Printf("Visit http://%v for the program", port)
 	log.Fatal(http.ListenAndServe(port, nil))

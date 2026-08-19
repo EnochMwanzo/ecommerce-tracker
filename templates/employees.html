@@ -43,6 +43,32 @@
   </tbody>
 </table>
 <h2>
+  Direct Labor
+</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Time period</th>
+      <th>Number of workers</th>
+      <th data-on:click="alert('stock / material needed for 1 unit')">Cost per job</th>
+      <th data-on:click="alert('How many units can be produced / units produced per day')">Jobs per worker per day</th>
+      <th data-on:click="alert('cash account >= unit price on bill of materials')">Total cost of direct labor</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for i in Labor %}
+    <tr>
+      <td>{{i.TimePeriod}}</td>
+      <td>{{i.NumberOfWorkers}}</td>
+      <td>{{i.CostPerJob}}</td>
+      <td>{{i.JobsPerWorkerPerDay}}</td>
+      <td>{{i.CostPerJob * i.NumberOfWorkers * i.JobsPerWorkerPerDay}}</td>
+    <tr>
+    {% endfor %}
+    <tr>
+  </tbody>
+</table>
+<h2>
   Add an Employee
 </h2>
 <div class="add-record-form">

@@ -1,25 +1,79 @@
 {% extends "base2.html" %}
 {% block resource %}Manufacturing{% endblock %}
+{% block title %}Manufacturing{% endblock %}
 <h1>Manufacturing</h1>>
 {% block content %}
+<h2>Bill of Materials</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Material</th>
+      <th>Supplier</th>
+      <th>Unit Price</th>
+      <th>Unit Volume</th>
+      <th>Quantity</th>
+      <th>Total</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for i in billOfMaterials %}
+    <tr>
+      <td>{{i.Material}}</td>
+      <td>{{i.Supplier}}</td>
+      <td class="currency">{{i.UnitPrice}}</td>
+      <td>{{i.UnitVolume}}</td>
+      <td>{{i.Quantity}}</td>
+      <td class="currency">{{i.UnitPrice * i.Quantity}}</td>
+    <tr>
+    {% endfor %}
+    <tr>
+      <td colspan="5" style="text-align: left;"><b>Total Cost of Materials</b></td>
+      <td class="currency">{{totalBillOfMaterials}}</td>
+    </tr>
+  </tbody>
+</table>
+<h2>Materials Inventory</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Material</th>
+      <th>Stock</th>
+      <th data-on:click="alert('stock / material needed for 1 unit')">How many units can be produced</th>
+      <th data-on:click="alert('How many units can be produced / units produced per day')">Days until out of stock</th>
+      <th data-on:click="alert('cash account >= unit price on bill of materials')">Cash available to purchase more</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for i in billOfMaterials %}
+    <tr>
+      <td>{{i.Material}}</td>
+      <td>{{i.Stock}}</td>
+      <td data-bind:>{{(i.Stock*i.UnitVolume)/i.VolumeForOneProduct</td>
+      <td></td>
+      <td>{{(i.UnitPrice * i.Quantity) > cash}}</td>
+    <tr>
+    {% endfor %}
+    <tr>
+  </tbody>
+</table>
 <h2>Cost of Goods Manufactured</h2>
 <table>
   <thead>
     <tr>
       <th>Time Period</th>
-      <th>Starting Work in Progress Inventory</th>
-      <th>Direct Material</th>
+      <th data-on:click="alert('ending work in progress of previous time period')">Starting Work in Progress Inventory</th>
+      <th data-on:click="alert('Direct materials used in Production \n (Beginning Material Inventory + Material Purchase) - Ending Inventory')">Direct Material</th>
       <th>Direct Labor</th>
-      <th>Manufacturig Overhead</th>
-      <th>Total Manufacturing Costs</th>
-      <th>Cost of Work in Progress</th>
+      <th data-on:click="alert('indirect materials + indirect labor + other overhead')">Manufacturig Overhead</th>
+      <th data-on:click="alert('Indirect materials + indirect labor + other overhead')">Total Manufacturing Costs</th>
+      <th data-on:click="alert('Total manufacturing costs + Work in progress')">Cost of Work in Progress</th>
       <th>Ending Work in Progress Inventory</th>
-      <th>Cost of Goods Manufactured</th>
+      <th data-on:click="alert('The difference between starting + materials labor & overhead, and ending work in progress')">Cost of Goods Manufactured</th>
     </tr>
   </thead>
   <tbody>
     <td>May 2026</td>
-    <td>$10000.00</td>
+    <td lass="currency">{{totalDirectMaterials}}</td>
     <td> $1000.15</td>
     <td> $7500.12</td><!-- multiply cost of wage by wip inventory-->
     <td>  $416.10</td><!-- yearly depreciation divided by length of time period-->
@@ -33,10 +87,10 @@
 <table>
   <thead>
     <tr>
-      <th>Cost</th>
+      <th>Cost Object</th>
       <th>Classification</th>
       <th>Variable or Fixed</th>
-      <th>Amount</th>
+      <th data-on:click="alert('Bill of materials unit price / volume * volume for producing one product')">Amount</th>
       <th>Output Range</th>
     </tr>
   </thead>
@@ -52,7 +106,7 @@
     {% endfor %}
 </table>
 <h2>Add a cost</h2>
-<form method="POST" action="/manufacturing">
+<form method="POST" action="/manufacturing?form=cost">
   <div class="add-record-form">
     <div class="add-record-form-label">
       <label for="cost-object">Cost Object</label><br>
@@ -76,6 +130,46 @@
       </select><br>
       <input id="amount" type="number" name="amount" step="0.01" required /><br>
       <input id="output-range" type="text" name="output-range" required />
+    </div>
+  </div>
+  <input type="submit" value="Submit" />
+</form>
+<h2>Add to Bill of Materials</h2>
+<form method="POST" action="/manufacturing">
+  <div class="add-record-form">
+    <div class="add-record-form-label">
+      <label for="material">Material</label><br>
+      <label for="supplier">Supplier</label><br>
+      <label for="unit-price">Unit Price</label><br>
+      <label for="unit-volume">Unit Volume</label><br>
+      <label for="quantity">Quantity</label>
+    </div>
+    <div class="add-record-form-input">
+      <input id="material" type="text" name="material" required /><br>
+      <input id="supplier" type="text" name="supplier" required /><br>
+      <input id="unit-price" type="number" name="unit-price" step="0.01" required /><br>
+      <input id="unit-volume" type="number" name="unit-volume" required /><br>
+      <input id="quantity" type="number" name="quantity" required />
+    </div>
+  </div>
+  <input type="submit" value="Submit" />
+</form>
+<h2>Track Finished Goods</h2>
+<form method="POST" action="/manufacturing?form=finished-goods">
+  <div class="add-record-form">
+    <div class="add-record-form-label">
+      <label for="number-of-goods-finished">Number of Goods Finshed</label><br>
+      <label for="date">Date</label><br>
+      <label for="product-id">Product</label>
+    </div>
+    <div class="add-record-form-input">
+      <input id="number-of-goods-finished" type="number" name="number-of-goods-finished" required /><br>
+      <input id="date" type="date" name="date" required /><br>
+      <select id="product-id" name="product-id" required>
+        {% for i in productRecords %}
+        <option value="{{ i.Id }}">{{ i.Id }} - {{ i.ProductName }}</option>
+        {% endfor %}
+      </select><br>
     </div>
   </div>
   <input type="submit" value="Submit" />

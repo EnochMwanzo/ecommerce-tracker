@@ -7,6 +7,7 @@
 position: fixed;
 left: 0;
 background: turquoise;
+padding: 0 1em;
 }
 .journal-entries-table {
     background: var(--light-bg-color);
@@ -207,9 +208,9 @@ background: turquoise;
       <thead>
         <tr>
             <th>Time Period</th>
-            <th class="tooltip1">Current Ratio<span class="tooltiptext">Current Ratio = Current Assets / Current Liabilities</span></th>
-            <th>Acid-Test Ratio</th>
-            <th>Gross Profit Percentage</th>
+            <th data-on:click="alert('Current Ratio = Current Assets / Current Liabilities')">Current Ratio</th>
+            <th data-on:click="alert('Acid-Test Ratio = Cash / Current Liabilities')">Acid-Test Ratio</th>
+            <th data-on:click="alert('Acid-Test Ratio = Cash / Current Liabilities')">Gross Profit Percentage</th>
         </tr>
     </thead>
     <tbody>
@@ -240,6 +241,24 @@ background: turquoise;
     <td class="percent">{{i.ContributionMarginRatio}}</td>
     <td>{{i.BreakevenPointInUnits}}</td>
     <td class="currency">{{i.BreakevenPointInSales}}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<hr>
+<h2>target profit ({{targetProfit}})</h2>
+<table>
+  <thead>
+    <th>Product</th>
+    <th>Percentage of Sales</th>
+    <th>Units Needed to Achieve Target</th>
+  </thead>
+  <tbody>
+    {% for i in breakevenAnalysis %}
+    <tr>
+    <td>{{i.ProductId}} (Acoustic Guitar)</td>
+    <td>{{i.PercentageOfSales}}</td>
+    <td>{{i.UnitsNeededToAchieveTarget}}</td>
     </tr>
     {% endfor %}
   </tbody>

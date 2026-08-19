@@ -1,0 +1,346 @@
+{% extends "base2.html" %}
+{% block resource %}Master Budget{% endblock %}
+{% block title %}Master Budget{% endblock %}
+<h1>Master Budget</h1>
+{% block content %}
+<table>
+  <thead>
+  <tr>
+    <th colspan="6"><h2>Sales Budget</h2></th> <!-- projected sales and units sold -->
+  </tr>
+  <tr>
+    <th>Line Item</th>
+    <th>Q1</th>
+    <th>Q2</th>
+    <th>Q3</th>
+    <th>Q4</th>
+    <th>Total</th>
+  </tr>
+  </thead>
+  <tbody>
+    <tr>
+    <td>Projected Units Sold</td>
+    <td data-bind:q1-projection value="{{projectedUnits[0]}}">{{projectedUnits[0]}}</td>
+    <td data-bind:q2-projection value="{{projectedUnits[1]}}">{{projectedUnits[1]}}</td>
+    <td data-bind:q3-projection value="{{projectedUnits[2]}}">{{projectedUnits[2]}}</td>
+    <td data-bind:q4-projection value="{{projectedUnits[3]}}">{{projectedUnits[3]}}</td>
+    <td class="currency">{{projectedSalesTotal}}</td>
+    </tr>
+    <tr>
+    <td data-on:click="alert('sum (units sold * retail price)')">Projected Sales</td>
+    <td class="currency">{{projectedSales[0]}}</td>
+    <td class="currency">{{projectedSales[1]}}</td>
+    <td class="currency">{{projectedSales[2]}}</td>
+    <td class="currency">{{projectedSales[3]}}</td>
+    <td class="currency">{{projectedSalesTotal}}</td>
+    </tr>
+  </tbody>
+  <tr>
+    <th colspan="6"><h2>Production Budget</h2></th><!-- projected cost of variable direct and indirect materials/labor, plus fixed overhead costs  -->
+  </tr>
+  <tbody>
+    <tr>
+    <td data-on:click="alert('sum of costs from bill of materials * projected unit sold')">Material</td>
+    <td class="currency">{{directMaterials[0]}}</td>
+    <td>$0.00</td>
+    <td>$0.00</td>
+    <td>$0.00</td>
+    <td class="currency">{{directMaterialsTotal}}</td>
+    </tr>
+    <tr>
+    <td data-on:click="alert('labor per unit * units sold')">Labor</td>
+    <td class="currency">{{directLabor[0]}}</td>
+    <td>$0.00</td>
+    <td>$0.00</td>
+    <td>$0.00</td>
+    <td class="currency">{{directLaborTota}}</td>
+    </tr>
+    <tr>
+    <td data-on:click="alert('sum of overhead divided among quarters')">Overhead</td>
+    <td class="currency">{{overhead[0]}}</td>
+    <td>$1250.00</td>
+    <td>$1250.00</td>
+    <td>$1250.00</td>
+    <td class="currency">{{overheadTotal}}</td>
+    </tr>
+    <tr>
+      <td colspan="5" style="text-align: left;"><b>Total Production Budget</b></td>
+      <td class="currency">{{productionTotalsTotal}}</td>
+    </tr>
+  </tbody>
+  <tr>
+    <th colspan="6"><h2>Cost of Goods Sold Budget</h2></th><!-- cost of purching inventory +
+    cost of goods manufactured -->
+  </tr>
+  <tbody>
+    <tr>
+      <td data-on:click="alert('Cost of goods manufactured')">Finished Goods</td>
+      <td class="currency">{{productionTotals[0]}}</td>
+      <td>$0.00</td>
+      <td>$0.00</td>
+      <td>$0.00</td>
+      <td>total</td>
+    </tr>
+    <tr>
+      <td>Purchased Goods</td>
+      <td class="currency">{{purchasedGoods[0]}}</td>
+      <td>$0.00</td>
+      <td>$0.00</td>
+      <td>$0.00</td>
+      <td>total</td>
+    </tr>
+    <tr>
+      <td colspan="5" style="text-align: left;"><b>Total Costs of Goods Sold Budget</b></td>
+      <td class="currency">{{costOfGoodsSoldTotals[0]}}</td>
+    </tr>
+  </tbody>
+  <tr>
+    <th colspan="6"><h2>Selling and Administrative Budget</h2></th><!-- base salaries, variable marketing expense -->
+  </tr>
+  <tbody>
+    <tr>
+    <td data-on:click="alert('sum of salaries from employees divided among quarters')">Salaries</td>
+    <td class="currency">{{salaries[0]}}</td>
+    <td>$0.00</td>
+    <td>$0.00</td>
+    <td>$0.00</td>
+    <td>$0.00</td>
+    </tr>
+    <tr>
+    <td data-on:click="alert('projected to cost 15% of sales')">Promotion</td>
+    <td class="currency">{{promotion[0]}}</td>
+    <td class="currency">{{promotion[1]}}</td>
+    <td class="currency">{{promotion[2]}}</td>
+    <td class="currency">{{promotion[3]}}</td>
+    <td class="currency">{{promotionTotal}}</td>
+    </tr>
+    <tr>
+      <td colspan="5" style="text-align: left;"><b>Total Selling and Administrative Budget</b></td>
+      <td class="currency">{{sellingAndGeneralAdministrativeTotal[0]}}</td>
+    </tr>
+  </tbody>
+  <tr>
+    <th colspan="6"><h2>Budgeted Income Statement</h2></th>
+  </tr>
+  <tbody>
+    <tr>
+    <td>Total Sales</td>
+    <td>$96250.00</td>
+    <td>$165000.00</td>
+    <td>$220000.00</td>
+    <td>$288750.00</td>
+    <td>$628750.00</td>
+    </tr>
+    <tr>
+    <td>Cost of Goods Sold</td>
+    <td>$0.00</td>
+    <td>$0.00</td>
+    <td>$0.00</td>
+    <td>$0.00</td>
+    <td>total</td>
+    </tr>
+    <tr>
+    <td>Net Profit</td>
+    <td>$0.00</td>
+    <td>$0.00</td>
+    <td>$0.00</td>
+    <td>$0.00</td>
+    <td>total</td>
+    </tr>
+    <tr>
+    <td>Promotion Expenses</td>
+    <td class="currency">{{promotion[0]}}</td>
+    <td class="currency">{{promotion[1]}}</td>
+    <td class="currency">{{promotion[2]}}</td>
+    <td class="currency">{{promotion[3]}}</td>
+    <td class="currency">{{promotionTotal}}</td>
+    </tr>
+    <tr>
+    <td data-on:click="alert('From the Selling & General Admin expense account trial balance')">Selling and General Administrative Expenses</td>
+    <td class="currency">{{sellingAndGeneralAdministrativeTotal[0]}}</td>
+    <td class="currency">{{sellingAndGeneralAdministrativeTotal[1]}}</td>
+    <td class="currency">{{sellingAndGeneralAdministrativeTotal[2]}}</td>
+    <td class="currency">{{sellingAndGeneralAdministrativeTotal[3]}}</td>
+    <td>total</td>
+    </tr>
+    <tr>
+    <td>Earnings before Interest, Taxes, Depreciation and Amoritization</td>
+    <td class="currency">{{EBITDA[0]}}</td>
+    <td class="currency">{{EBITDA[0]}}</td>
+    <td class="currency">{{EBITDA[0]}}</td>
+    <td class="currency">{{EBITDA[0]}}</td>
+    <td class="currency">{{EBITDA_Total}}</td>
+    </tr>
+    <tr>
+    <td data-on:click="alert('Deprication and Amoratization account')">Depeciation and Amoritization</td>
+    <td>$0.00</td>
+    <td>$0.00</td>
+    <td>$0.00</td>
+    <td>$0.00</td>
+    <td>total</td>
+    </tr>
+    <tr>
+      <td>Net Income</td>
+      <td>{{netIncome[0]}}</td>
+      <td>$0.00</td>
+      <td>$0.00</td>
+      <td>$0.00</td>
+      <td>total</td>
+      </tr>
+  </tbody>
+  <tr>
+    <th colspan="6"><h2>Cash Budget</h2></th><!-- when you spend and receive cash -->
+  </tr>
+  <tbody>
+    <tr>
+    <td>Beginning Cash Balance</td>
+    <td>$0.00</td>
+    <td>$96250.00 + $0.00</td>
+    <td>$165000.00 + $0.00</td>
+    <td>$220000.00 + $0.00</td>
+    <td>total</td>
+    </tr>
+    <tr>
+    <td data-on:click="alert('Collections is percentage of sales that will be collected from customers during the time period')">Collections from Customers</td>
+    <td>$96250.00</td>
+    <td>$165000.00</td>
+    <td>$220000.00</td>
+    <td>$288750.00</td>
+    <td>$628750.00</td>
+    </tr>
+    <tr>
+    <td data-on:click="alert('percentage of Manufacturing & Purchases that will be paid for within the period')">Cost of Goods Sold Payments</td>
+    <td>$0.00</td>
+    <td>$0.00</td>
+    <td>$0.00</td>
+    <td>$0.00</td>
+    <td>total</td>
+    </tr>
+    <tr>
+    <td>Selling and Administrative</td>
+    <td class="currency">{{sellingAndGeneralAdministrativeTotal[0]}}</td>
+    <td class="currency">{{sellingAndGeneralAdministrativeTotal[1]}}</td>
+    <td class="currency">{{sellingAndGeneralAdministrativeTotal[2]}}</td>
+    <td class="currency">{{sellingAndGeneralAdministrativeTotal[3]}}</td>
+    <td>total</td>
+    </tr>
+    <tr>
+    <td>Excess/Defiencency of Cash</td>
+    <td>$0.00</td>
+    <td>$0.00</td>
+    <td>$0.00</td>
+    <td>$0.00</td>
+    <td>total</td>
+    </tr>
+    <tr>
+    <td>Borrowings</td>
+    <td>$0.00</td>
+    <td>$0.00</td>
+    <td>$0.00</td>
+    <td>$0.00</td>
+    <td>total</td>
+    </tr>
+    <tr>
+    <td>Repayments Including Interest</td>
+    <td>$0.00</td>
+    <td>$0.00</td>
+    <td>$0.00</td>
+    <td>$0.00</td>
+    <td>total</td>
+    </tr>
+    <tr>
+    <td>Ending Cash Balance</td>
+    <td>$0.00</td>
+    <td>$0.00</td>
+    <td>$0.00</td>
+    <td>$0.00</td>
+    <td>total</td>
+    </tr>
+  </tbody>
+  <tr>
+    <th colspan="6"><h2>Budgeted Balance Sheet</h2></th><!-- inventory changes, A/P and A/R changes, if you invested in capEx-->
+  </tr>
+  <tbody>
+    <tr>
+    <td>Cash</td>
+    <td>$0.00</td>
+    <td>$0.00</td>
+    <td>$0.00</td>
+    <td>$0.00</td>
+    <td>total</td>
+    </tr>
+    <tr>
+    <td>Accounts Receivable</td>
+    <td>$0.00</td>
+    <td>$0.00</td>
+    <td>$0.00</td>
+    <td>$0.00</td>
+    <td>total</td>
+    </tr>
+    <tr>
+    <td>Prepaid Expenses</td>
+    <td>$0.00</td>
+    <td>$0.00</td>
+    <td>$0.00</td>
+    <td>$0.00</td>
+    <td>total</td>
+    </tr>
+    <tr>
+    <td>Inventory</td>
+    <td>$0.00</td>
+    <td>$0.00</td>
+    <td>$0.00</td>
+    <td>$0.00</td>
+    <td>total</td>
+    </tr>
+    <tr>
+    <td>Property & Equipment</td>
+    <td>$0.00</td>
+    <td>$0.00</td>
+    <td>$0.00</td>
+    <td>$0.00</td>
+    <td>total</td>
+    </tr>
+    <tr>
+    <td>Goodwill</td>
+    <td>$0.00</td>
+    <td>$0.00</td>
+    <td>$0.00</td>
+    <td>$0.00</td>
+    <td>total</td>
+    </tr>
+    <tr>
+    <td>Accounts Payable</td>
+    <td>$0.00</td>
+    <td>$0.00</td>
+    <td>$0.00</td>
+    <td>$0.00</td>
+    <td>total</td>
+    </tr>
+    <tr>
+    <td>Accured Expenses</td>
+    <td>$0.00</td>
+    <td>$0.00</td>
+    <td>$0.00</td>
+    <td>$0.00</td>
+    <td>total</td>
+    </tr>
+    <tr>
+    <td>Unearned Revenue</td>
+    <td>$0.00</td>
+    <td>$0.00</td>
+    <td>$0.00</td>
+    <td>$0.00</td>
+    <td>total</td>
+    </tr>
+    <tr>
+    <td>Long Term Debt</td>
+    <td>$0.00</td>
+    <td>$0.00</td>
+    <td>$0.00</td>
+    <td>$0.00</td>
+    <td>total</td>
+    </tr>
+  </tbody>
+</table>
+{% endblock %}
