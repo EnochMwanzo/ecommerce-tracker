@@ -122,7 +122,7 @@ Save customer ratings and what they say about the their orders here.
 The add a review form allow a new review by entering the order the review is for, the rating, and review.
 ### Finances
 <p align="center">
-<img src="/screenshots/Finances.png" style="width:45%; border: 5px solid black;"> 
+<img src="/screenshots/Finances.png" style="width:75%; border: 5px solid black;"> 
 </p>
 This page has the chart of accounts, general ledger, the financial statements, and journal entries, and trial balance.
 
@@ -209,9 +209,10 @@ You can generate balance sheets in a new tab to print or save as PDF
 * Gross Profit Percentage: The total from the income statement as a percentage.
 ### Manufacturing
 <p align="center">
-<img src="/screenshots/Manufacturing.png" style="width:45%; border: 5px solid black;">
+<img src="/screenshots/Manufacturing.png" style="width:75%; border: 5px solid black;">
 </p>
 The manufacturing page has tables for materials and cost of goods manufactured.
+
 #### Bill of Materials
 * Material: The name of the material.
 * Product ID: The ID of the product in the products table that the material is used for.
@@ -265,7 +266,7 @@ The master budget uses a projected number of units sold to estimate how money wi
 * Ending Cash Balance: The excess/deficiency of cash, plus the difference between borrowings and repayments.
 ### Setings
 <p align="center">
-<img src="/screenshots/Settings.png" style="width:45%; border: 5px solid black;">
+<img src="/screenshots/Settings.png" style="width:75%; border: 5px solid black;">
 </p>
 The settings for the program can be changed here. They match the settings in the `config.ini` file.
 
