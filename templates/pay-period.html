@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+      Ecommerce Tracker: Payroll
+    </title>
+    <style>
+    body {
+        margin: 0 auto;
+        text-align: center;
+        font-family: serif;
+        width: 600px;
+    }
+    .grid-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+    }
+    table {
+        margin: 0 auto;
+    }
+    .category-name {
+        text-align: left;
+        padding: 0.5em 1em;
+    }
+    .amount {
+        text-align: right;
+    }
+    .total {
+        border-top: 1px solid;
+    }
+    </style>
+    <script
+      type="module"
+      src="https://cdn.jsdelivr.net/gh/starfederation/datastar@1.0.0-RC.8/bundles/datastar.js"
+    ></script>
+    <script>
+    function formatCurrency() {
+      var myClasses = document.querySelectorAll(".currency");
+      myClasses.forEach(i => {
+        i.innerText = Intl.NumberFormat("en-US", {style: "currency", currency: "USD" }).format(i.innerText/100);
+      });
+    }
+    window.addEventListener('load', formatCurrency)
+    </script>
+  </head>
+  <body>
+    <header>
+      <h1>Payroll for {{displayedPayPeriod.Start}} to {{displayedPayPeriod.End}}</h1>
+    </header>
+    <main>
+      <table>
+        <thead>
+          <tr>
+            <th>Employee</th>
+            <th>Jobs Completed</th>
+            <th>Gross Wages</th>
+            <th>Deductions</th>
+            <th>Withholding Amount</th>
+            <th>Net Pay</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for i in payPeriod.PayPeriodData %}
+          <tr>
+            <td>{{i.EmployeeId}} ({{i.EmployeeName}})</td>
+            <td>{{i.JobsCompleted}}</td>
+            <td class="currency">{{i.GrossWages}}</td>
+            <td class="currency">{{i.BenefitDeductions}}</td>
+            <td class="currency">{{i.WithholdingAmount}}</td>
+            <td class="currency">{{i.NetPay}}</td>
+          </tr>
+          {% endfor %}
+          <tr>
+            <td colspan="5" style="text-align: left;"><b>Total Payroll</b></td>
+            <td class="currency">{{payrollSum}}</td>
+          </tr>
+        </tbody>
+      </table>
+    </main>
+  </body>
+</html>

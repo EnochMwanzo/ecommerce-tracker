@@ -7,23 +7,27 @@
 <table>
   <thead>
     <tr>
+      <th data-on:click="alert('The ID of the product that the material is used for')">Product ID</th>
       <th>Material</th>
-      <th>Supplier</th>
-      <th>Unit Price</th>
       <th>Unit Volume</th>
-      <th>Quantity</th>
-      <th>Total</th>
+      <th>Supplier</th>
+      <th>Volume for One Product</th>
+      <th>Metric</th>
+      <th>Unit Price</th>
+      <th></th>
     </tr>
   </thead>
   <tbody>
     {% for i in billOfMaterials %}
-    <tr>
+    <tr id="{{i.MaterialID}}">
+      <td>{{i.ProductId}}</td>
       <td>{{i.Material}}</td>
-      <td>{{i.Supplier}}</td>
-      <td class="currency">{{i.UnitPrice}}</td>
       <td>{{i.UnitVolume}}</td>
-      <td>{{i.Quantity}}</td>
-      <td class="currency">{{i.UnitPrice * i.Quantity}}</td>
+      <td>{{i.Supplier}}</td>
+      <td>{{i.VolumeForOneProduct}}</td>
+      <td>{{i.Metric}}</td>
+      <td class="currency">{{i.UnitPrice}}</td>
+      <td><button data-on:click="@get('/manufacturing/edit?id={{i.MaterialID}}')">Edit</button></td>
     <tr>
     {% endfor %}
     <tr>
@@ -48,7 +52,7 @@
     <tr>
       <td>{{i.Material}}</td>
       <td>{{i.Stock}}</td>
-      <td data-bind:>{{(i.Stock*i.UnitVolume)/i.VolumeForOneProduct</td>
+      <td data-bind:>{{(i.Stock*i.UnitVolume)//i.VolumeForOneProduct}}</td>
       <td></td>
       <td>{{(i.UnitPrice * i.Quantity) > cash}}</td>
     <tr>
@@ -105,7 +109,7 @@
     </tr>
     {% endfor %}
 </table>
-<h2>Add a cost</h2>
+<h2>Add an overhead cost</h2>
 <form method="POST" action="/manufacturing?form=cost">
   <div class="add-record-form">
     <div class="add-record-form-label">
@@ -142,6 +146,7 @@
       <label for="supplier">Supplier</label><br>
       <label for="unit-price">Unit Price</label><br>
       <label for="unit-volume">Unit Volume</label><br>
+      <label for="metric">Metric</label><br>
       <label for="quantity">Quantity</label>
     </div>
     <div class="add-record-form-input">
@@ -149,6 +154,7 @@
       <input id="supplier" type="text" name="supplier" required /><br>
       <input id="unit-price" type="number" name="unit-price" step="0.01" required /><br>
       <input id="unit-volume" type="number" name="unit-volume" required /><br>
+      <input id="metric" type="text" name="metric" required /><br>
       <input id="quantity" type="number" name="quantity" required />
     </div>
   </div>
@@ -158,11 +164,17 @@
 <form method="POST" action="/manufacturing?form=finished-goods">
   <div class="add-record-form">
     <div class="add-record-form-label">
+      <label for="employee">Employee</label><br>
       <label for="number-of-goods-finished">Number of Goods Finshed</label><br>
       <label for="date">Date</label><br>
       <label for="product-id">Product</label>
     </div>
     <div class="add-record-form-input">
+      <select id="employee" name="employee">
+        {% for i in employeeRecords %}
+        <option value="{{i.Id}}">{{i.Id}} - {{i.EmployeeName}}</option>
+        {% endfor %}
+      </select><br>
       <input id="number-of-goods-finished" type="number" name="number-of-goods-finished" required /><br>
       <input id="date" type="date" name="date" required /><br>
       <select id="product-id" name="product-id" required>

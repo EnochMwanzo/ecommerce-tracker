@@ -1,0 +1,25 @@
+{% extends "base2.html" %}
+{% block resource %}Settings{% endblock %}
+{% block title %} Settings {% endblock %}
+{% block content %}
+<p id="confirm"></p>
+<form method="POST" action="/settings">
+  <label for="User">User</label><input id="User" type="Text" name="User" value="{{User}}" required><br>
+  <label for="Passwd">Passwd<input id="Passwd" type="password" name="Passwd" value="{{Passwd}}" required><br>
+  <label for="Net">Net<input id="Net" type="Text" name="Net" value="{{Net}}" required><br>
+  <label for="Addr">Addr<input id="Addr" type="Text" name="Addr" value="{{Addr}}" required><br>
+  <label for="DBName">DBName<input id="DBName" type="Text" name="DBName" value="{{DBName}}" required><br>
+   <label for="DefaultPage">DefaultPage<select id="DefaultPage" value="{{DefaultPage}}">
+    <option value="customers">Customers</option>
+    <option value="products">Products</option>
+    <option value="employees">Employees</option>
+    <option value="orders">Orders</option>
+    <option value="reviews">Reviews</option>
+    <option value="finances">Finances</option>
+    <option value="manufacturing">Manufacturing</option>
+    <option value="master-budget">Master Budget</option>
+    <option value="settings">Settings</option>
+  </select><br>
+  <input type="submit" value="Submit">
+</form>
+{% endblock %}

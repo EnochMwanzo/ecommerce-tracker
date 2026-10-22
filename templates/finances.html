@@ -70,9 +70,10 @@ padding: 0 1em;
       {% for i in chartOfAccounts %}
         <tr>
             <td>{{i.AccountCode}}</td>
-            <td>{{i.AccountName}}</td>
+            <td id="{{i.AccountCode}}-name">{{i.AccountName}}</td>
             <td>{{i.AccountType}}</td>
             <td>{{i.FinancialStatement}}</td>
+            <td><button data-on:click="@get('/finances/edit?account-code={{i.AccountCode}}')">Edit</button></td>
         </tr>
         {% endfor %}
       {% endif %}
@@ -83,11 +84,12 @@ padding: 0 1em;
 <a href="/finances?statement=ledger" target="_blank">Full General Ledger (new tab)</a>
 <form id="change-ledger-form">
 <select id="ledger-index" name="ledger-index">
+  <option value="{{displayedLedger.AccountName}}">{{displayedLedger.AccountCode}} {{displayedLedger.AccountName}}</option>
   {% for i in chartOfAccounts %}
   <option value="{{i.AccountName}}">{{i.AccountCode}} {{i.AccountName}}</option>
   {% endfor %}
 </select>
-<button data-on:click="@get('/finances', {contentType: 'form'})">Submit</button>
+<button data-on:click="formatCurrency() && @get('/finances', {contentType: 'form'}) && scrollIntoView('#general-ledger')">Submit</button>
 </form>
 <div id="general-ledger-table">
 <h3>{{displayedLedger.AccountName}}</h3>
@@ -203,6 +205,32 @@ padding: 0 1em;
     </tbody>
 </table>
 <hr>
+<h2>Fixed Assets</h2>
+<table>
+  <thead>
+    <tr>
+        <th>Asset</th>
+        <th data-on:click="alert('The date the asset is gotten and depreciation begins')">Starting Date</th>
+        <th data-on:click="alert('How much the asset was worth before any depreciation')">Starting Value</th>
+        <th data-on:click="alert('How the asset loses value over time, such as straight-line depreciation')">Depreciation Method</th>
+        <th data-on:click="alert('The time until the asset depreciation is over.')">Asset Lifetime</th>
+        <th data-on:click="alert('Current Value = Starting Value - Depreciation * (Asset Lifetime - Elasped time since Starting Date) Date)')">Current Value</th>
+    </tr>
+</thead>
+<tbody>
+  <tr>
+    {% for i in fixedAssetRecords %}
+<td>{{i.id}}</td>
+<td>{{i.AssetName}}</td>
+<td>{{i.StartingDate}}</td>
+<td>{{i.StartingValue}}</td>
+<td>{{i.DepreciationMethod}}</td>
+<td>{{i.AssetLifetime}}</td>
+<td>{{i.CurrentValue}}</td>
+{% endfor %}
+  </tr>
+</tbody>
+</table>
   <h2 id="financial-ratios">Financial Ratios</h2>
     <table>
       <thead>
@@ -224,7 +252,8 @@ padding: 0 1em;
         {% endif %}
     </tbody>
 </table>
-<h2 id="breakeven-analysis">Breakeven Analysis</h2>
+<!--Moved to products. Could be used for breakeven analysis of all of the company instead of just products-->
+<!--<h2 id="breakeven-analysis">Breakeven Analysis</h2>
 <table>
   <thead>
     <th>Product</th>
@@ -244,25 +273,7 @@ padding: 0 1em;
     </tr>
     {% endfor %}
   </tbody>
-</table>
-<hr>
-<h2>target profit ({{targetProfit}})</h2>
-<table>
-  <thead>
-    <th>Product</th>
-    <th>Percentage of Sales</th>
-    <th>Units Needed to Achieve Target</th>
-  </thead>
-  <tbody>
-    {% for i in breakevenAnalysis %}
-    <tr>
-    <td>{{i.ProductId}} (Acoustic Guitar)</td>
-    <td>{{i.PercentageOfSales}}</td>
-    <td>{{i.UnitsNeededToAchieveTarget}}</td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
+</table>-->
 <hr>
 <h2 id="journal-entries">Journal Entries</h2>
 <table class="journal-entries-table">
@@ -325,6 +336,31 @@ padding: 0 1em;
     </tbody>
 </table>
 <hr>
+<h2>Add an account to Chart of Accounts</h2>
+<div class="add-record-form">
+  <form id="add-chart-of-accounts" method="POST" action="/finances?form=add-chart-of-accounts">
+  <div class="add-record-form-label">
+    <label for="statement">Statement</label><br>
+    <label for="category">Category</label><br>
+    <label for="account-name">Account Name</label><br>
+  </div>
+<div class="add-record-form-input">
+  <select id="statement" name="statement">
+    <option value="1">Balance Sheet</option>
+    <option value="2">Income Statement</option>
+  </select><br>
+  <select id="category" name="category">
+    <option value="1">Asset</option>
+    <option value="2">Liability</option>
+    <option value="3">Revenue</option>
+    <option value="4">Expense</option>
+    <option value="5">Equity</option>
+  </select><br>
+  <input type="text" id="account-name" name="account-name" required>
+</div>
+ <input type="submit" value="Submit" />
+  </form>
+</div>
 <h2>Add a Journal Entry</h2>
 <div class="add-record-form">
 <form id="add-td" method="POST" action="/finances">

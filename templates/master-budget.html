@@ -20,11 +20,11 @@
   <tbody>
     <tr>
     <td>Projected Units Sold</td>
-    <td data-bind:q1-projection value="{{projectedUnits[0]}}">{{projectedUnits[0]}}</td>
-    <td data-bind:q2-projection value="{{projectedUnits[1]}}">{{projectedUnits[1]}}</td>
-    <td data-bind:q3-projection value="{{projectedUnits[2]}}">{{projectedUnits[2]}}</td>
-    <td data-bind:q4-projection value="{{projectedUnits[3]}}">{{projectedUnits[3]}}</td>
-    <td class="currency">{{projectedSalesTotal}}</td>
+    <td data-signals:q1-projection="{{projectedUnits[0]}}">{{projectedUnits[0]}}</td>
+    <td data-signals:q2-projection="{{projectedUnits[1]}}">{{projectedUnits[1]}}</td>
+    <td data-signals:q3-projection="{{projectedUnits[2]}}">{{projectedUnits[2]}}</td>
+    <td data-signals:q4-projection="{{projectedUnits[3]}}">{{projectedUnits[3]}}</td>
+    <td>{{projectedUnitsTotal}}</td>
     </tr>
     <tr>
     <td data-on:click="alert('sum (units sold * retail price)')">Projected Sales</td>
@@ -41,26 +41,32 @@
   <tbody>
     <tr>
     <td data-on:click="alert('sum of costs from bill of materials * projected unit sold')">Material</td>
-    <td class="currency">{{directMaterials[0]}}</td>
-    <td>$0.00</td>
-    <td>$0.00</td>
-    <td>$0.00</td>
+    <td colspan="5"></td>
+    </tr>
+    {% for i in projectedUnitsRecord %}
+    <tr>
+    <td>{{i.ProductName}}</td>
+    <td class="currency">{{directMaterials[loop.index0][0]}}</td>
+    <td class="currency">{{directMaterials[loop.index0][1]}}</td>
+    <td class="currency">{{directMaterials[loop.index0][2]}}</td>
+    <td class="currency">{{directMaterials[loop.index0][3]}}</td>
     <td class="currency">{{directMaterialsTotal}}</td>
     </tr>
+    {% endfor %}
     <tr>
     <td data-on:click="alert('labor per unit * units sold')">Labor</td>
     <td class="currency">{{directLabor[0]}}</td>
-    <td>$0.00</td>
-    <td>$0.00</td>
-    <td>$0.00</td>
-    <td class="currency">{{directLaborTota}}</td>
+    <td class="currency">{{directLabor[1]}}</td>
+    <td class="currency">{{directLabor[2]}}</td>
+    <td class="currency">{{directLabor[3]}}</td>
+    <td class="currency">{{directLaborTotal}}</td>
     </tr>
     <tr>
     <td data-on:click="alert('sum of overhead divided among quarters')">Overhead</td>
     <td class="currency">{{overhead[0]}}</td>
-    <td>$1250.00</td>
-    <td>$1250.00</td>
-    <td>$1250.00</td>
+    <td class="currency">{{overhead[1]}}</td>
+    <td class="currency">{{overhead[2]}}</td>
+    <td class="currency">{{overhead[3]}}</td>
     <td class="currency">{{overheadTotal}}</td>
     </tr>
     <tr>
@@ -74,24 +80,24 @@
   </tr>
   <tbody>
     <tr>
-      <td data-on:click="alert('Cost of goods manufactured')">Finished Goods</td>
-      <td class="currency">{{productionTotals[0]}}</td>
-      <td>$0.00</td>
-      <td>$0.00</td>
-      <td>$0.00</td>
-      <td>total</td>
+      <td data-on:click="alert('Cost of goods manufactured')">Manufactured Goods</td>
+      <td class="currency">{{productionQuarterTotals[0]}}</td>
+      <td class="currency">{{productionQuarterTotals[1]}}</td>
+      <td class="currency">{{productionQuarterTotals[2]}}</td>
+      <td class="currency">{{productionQuarterTotals[3]}}</td>
+      <td class="currency">{{productionTotalsTotal}}</td>
     </tr>
     <tr>
       <td>Purchased Goods</td>
       <td class="currency">{{purchasedGoods[0]}}</td>
-      <td>$0.00</td>
-      <td>$0.00</td>
-      <td>$0.00</td>
-      <td>total</td>
+      <td class="currency">{{purchasedGoods[1]}}</td>
+      <td class="currency">{{purchasedGoods[2]}}</td>
+      <td class="currency">{{purchasedGoods[3]}}</td>
+      <td class="currency">{{purchasedGoodsTotal}}</td>
     </tr>
     <tr>
       <td colspan="5" style="text-align: left;"><b>Total Costs of Goods Sold Budget</b></td>
-      <td class="currency">{{costOfGoodsSoldTotals[0]}}</td>
+      <td class="currency">{{costOfGoodsSoldTotal}}</td>
     </tr>
   </tbody>
   <tr>
@@ -101,10 +107,10 @@
     <tr>
     <td data-on:click="alert('sum of salaries from employees divided among quarters')">Salaries</td>
     <td class="currency">{{salaries[0]}}</td>
-    <td>$0.00</td>
-    <td>$0.00</td>
-    <td>$0.00</td>
-    <td>$0.00</td>
+    <td class="currency">{{salaries[1]}}</td>
+    <td class="currency">{{salaries[2]}}</td>
+    <td class="currency">{{salaries[3]}}</td>
+    <td class="currency">{{salariesTotal}}</td>
     </tr>
     <tr>
     <td data-on:click="alert('projected to cost 15% of sales')">Promotion</td>
@@ -116,7 +122,7 @@
     </tr>
     <tr>
       <td colspan="5" style="text-align: left;"><b>Total Selling and Administrative Budget</b></td>
-      <td class="currency">{{sellingAndGeneralAdministrativeTotal[0]}}</td>
+      <td class="currency">{{sellingAndGeneralAdministrativeTotal}}</td>
     </tr>
   </tbody>
   <tr>
@@ -125,27 +131,27 @@
   <tbody>
     <tr>
     <td>Total Sales</td>
-    <td>$96250.00</td>
-    <td>$165000.00</td>
-    <td>$220000.00</td>
-    <td>$288750.00</td>
-    <td>$628750.00</td>
+    <td class="currency">{{projectedSales[0]}}</td>
+    <td class="currency">{{projectedSales[1]}}</td>
+    <td class="currency">{{projectedSales[2]}}</td>
+    <td class="currency">{{projectedSales[3]}}</td>
+    <td class="currency">{{projectedSalesTotal}}</td>
     </tr>
     <tr>
     <td>Cost of Goods Sold</td>
-    <td>$0.00</td>
-    <td>$0.00</td>
-    <td>$0.00</td>
-    <td>$0.00</td>
-    <td>total</td>
+    <td class="currency">{{costOfGoodsSoldQuarterTotals[0]}}</td>
+    <td class="currency">{{costOfGoodsSoldQuarterTotals[1]}}</td>
+    <td class="currency">{{costOfGoodsSoldQuarterTotals[2]}}</td>
+    <td class="currency">{{costOfGoodsSoldQuarterTotals[3]}}</td>
+    <td class="currency">{{costOfGoodsSoldTotal}}</td>
     </tr>
     <tr>
     <td>Net Profit</td>
-    <td>$0.00</td>
-    <td>$0.00</td>
-    <td>$0.00</td>
-    <td>$0.00</td>
-    <td>total</td>
+    <td class="currency">{{netProfitQuarterTotals[0]}}</td>
+    <td class="currency">{{netProfitQuarterTotals[1]}}</td>
+    <td class="currency">{{netProfitQuarterTotals[2]}}</td>
+    <td class="currency">{{netProfitQuarterTotals[3]}}</td>
+    <td class="currency">{{netProfitTotal}}</td>
     </tr>
     <tr>
     <td>Promotion Expenses</td>
@@ -157,35 +163,35 @@
     </tr>
     <tr>
     <td data-on:click="alert('From the Selling & General Admin expense account trial balance')">Selling and General Administrative Expenses</td>
-    <td class="currency">{{sellingAndGeneralAdministrativeTotal[0]}}</td>
-    <td class="currency">{{sellingAndGeneralAdministrativeTotal[1]}}</td>
-    <td class="currency">{{sellingAndGeneralAdministrativeTotal[2]}}</td>
-    <td class="currency">{{sellingAndGeneralAdministrativeTotal[3]}}</td>
-    <td>total</td>
+    <td class="currency">{{sellingAndGeneralAdministrativeQuarterTotals[0]}}</td>
+    <td class="currency">{{sellingAndGeneralAdministrativeQuarterTotals[1]}}</td>
+    <td class="currency">{{sellingAndGeneralAdministrativeQuarterTotals[2]}}</td>
+    <td class="currency">{{sellingAndGeneralAdministrativeQuarterTotals[3]}}</td>
+    <td class="currency">{{sellingAndGeneralAdministrativeTotal}}</td>
     </tr>
     <tr>
     <td>Earnings before Interest, Taxes, Depreciation and Amoritization</td>
     <td class="currency">{{EBITDA[0]}}</td>
-    <td class="currency">{{EBITDA[0]}}</td>
-    <td class="currency">{{EBITDA[0]}}</td>
-    <td class="currency">{{EBITDA[0]}}</td>
+    <td class="currency">{{EBITDA[1]}}</td>
+    <td class="currency">{{EBITDA[2]}}</td>
+    <td class="currency">{{EBITDA[3]}}</td>
     <td class="currency">{{EBITDA_Total}}</td>
     </tr>
     <tr>
     <td data-on:click="alert('Deprication and Amoratization account')">Depeciation and Amoritization</td>
-    <td>$0.00</td>
-    <td>$0.00</td>
-    <td>$0.00</td>
-    <td>$0.00</td>
-    <td>total</td>
+    <td class="currency">{{depreciationAndAmoritization[0]}}</td>
+    <td class="currency">{{depreciationAndAmoritization[1]}}</td>
+    <td class="currency">{{depreciationAndAmoritization[2]}}</td>
+    <td class="currency">{{depreciationAndAmoritization[3]}}</td>
+    <td class="currency">{{depreciationAndAmoritizationTotal}}</td>
     </tr>
     <tr>
       <td>Net Income</td>
-      <td>{{netIncome[0]}}</td>
-      <td>$0.00</td>
-      <td>$0.00</td>
-      <td>$0.00</td>
-      <td>total</td>
+      <td class="currency">{{netIncome[0]}}</td>
+      <td class="currency">{{netIncome[1]}}</td>
+      <td class="currency">{{netIncome[2]}}</td>
+      <td class="currency">{{netIncome[3]}}</td>
+      <td class="currency">{{netIncomeTotal}}</td>
       </tr>
   </tbody>
   <tr>
@@ -194,35 +200,35 @@
   <tbody>
     <tr>
     <td>Beginning Cash Balance</td>
-    <td>$0.00</td>
-    <td>$96250.00 + $0.00</td>
-    <td>$165000.00 + $0.00</td>
-    <td>$220000.00 + $0.00</td>
-    <td>total</td>
+    <td class="currency">{{cashBalance[0]}}</td>
+    <td class="currency">{{cashBalance[1]}}</td>
+    <td class="currency">{{cashBalance[2]}}</td>
+    <td class="currency">{{cashBalance[3]}}</td>
+    <td></td>
     </tr>
     <tr>
     <td data-on:click="alert('Collections is percentage of sales that will be collected from customers during the time period')">Collections from Customers</td>
-    <td>$96250.00</td>
-    <td>$165000.00</td>
-    <td>$220000.00</td>
-    <td>$288750.00</td>
-    <td>$628750.00</td>
+    <td class="currency">{{collections[0]}}</td>
+    <td class="currency">{{collections[1]}}</td>
+    <td class="currency">{{collections[2]}}</td>
+    <td class="currency">{{collections[3]}}</td>
+    <td class="currency">{{collectionsTotal}}</td>
     </tr>
     <tr>
     <td data-on:click="alert('percentage of Manufacturing & Purchases that will be paid for within the period')">Cost of Goods Sold Payments</td>
-    <td>$0.00</td>
-    <td>$0.00</td>
-    <td>$0.00</td>
-    <td>$0.00</td>
-    <td>total</td>
+    <td class="currency">{{payments[0]}}</td>
+    <td class="currency">{{payments[1]}}</td>
+    <td class="currency">{{payments[2]}}</td>
+    <td class="currency">{{payments[3]}}</td>
+    <td class="currency">{{paymentsTotal}}</td>
     </tr>
     <tr>
     <td>Selling and Administrative</td>
-    <td class="currency">{{sellingAndGeneralAdministrativeTotal[0]}}</td>
-    <td class="currency">{{sellingAndGeneralAdministrativeTotal[1]}}</td>
-    <td class="currency">{{sellingAndGeneralAdministrativeTotal[2]}}</td>
-    <td class="currency">{{sellingAndGeneralAdministrativeTotal[3]}}</td>
-    <td>total</td>
+    <td class="currency">{{sellingAndGeneralAdministrativeQuarterTotals[0]}}</td>
+    <td class="currency">{{sellingAndGeneralAdministrativeQuarterTotals[1]}}</td>
+    <td class="currency">{{sellingAndGeneralAdministrativeQuarterTotals[2]}}</td>
+    <td class="currency">{{sellingAndGeneralAdministrativeQuarterTotals[3]}}</td>
+    <td class="currency">{{sellingAndGeneralAdministrativeTotal}}</td>
     </tr>
     <tr>
     <td>Excess/Defiencency of Cash</td>
@@ -254,7 +260,7 @@
     <td>$0.00</td>
     <td>$0.00</td>
     <td>$0.00</td>
-    <td>total</td>
+    <td></td>
     </tr>
   </tbody>
   <tr>

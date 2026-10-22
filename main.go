@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/nikolalohinski/gonja/v2"
@@ -22,14 +24,17 @@ type CurrentPage struct {
 }
 
 type Customer struct {
-	Id             int    `json:"id"`
-	CustomerName   string `json:"customerName"`
-	Subscriber     bool   `json:"subscriber"`
-	Cohort         string `json:"cohort"`
-	SignupDate     string `json:"signupDate"`
-	LifetimeValue  int
-	NumberOfOrders int
-	NetProfit      int
+	Id                 int    `json:"id"`
+	CustomerName       string `json:"customerName"`
+	Subscriber         bool   `json:"subscriber"`
+	Cohort             string `json:"cohort"`
+	SignupDate         string `json:"signupDate"`
+	RecencyDays        int
+	OrderFrequencyDays int
+	LifetimeValue      int
+	NumberOfOrders     int
+	NetProfit          int
+	Score              int
 }
 type CustomerPatch struct {
 	NewCustomerName string `json:"newCustomerName"`
@@ -44,6 +49,7 @@ type Product struct {
 	Stock                int    `json:"stock"`
 	MinimumOrderQuantity int    `json:"minimumOrderQuanity"`
 	RetailPrice          int    `json:"retailPrice"`
+	Source               string `json:"source"`
 }
 type ProductPatch struct {
 	NewProductName         string `json:"newProductName"`
@@ -51,6 +57,7 @@ type ProductPatch struct {
 	NewStockAtWarehouse    int    `json:"newStockAtWarehouse"`
 	NewMinimumOrderQuanity int    `json:"newMinimumOrderQuanity"`
 	NewPrice               int    `json:"newPrice"`
+	NewSource              int    `json:"newSource"`
 }
 type InventoryCosting struct {
 	TimePeriod    string `json:"timePeriod"`
@@ -63,38 +70,68 @@ type InventoryCosting struct {
 	TotalCount    int    `json:"totalCount"`
 }
 
+type Inventory struct {
+	Id           int
+	ProductId    int
+	EmployeeId   int    // The employee who made the product if manufactured, else 0
+	DateCreated  string // manufacture or purchase date
+	OrderId      int    // the order that the item was assigned to, 0 if no order yet
+	Location     string
+	Damaged      bool
+	Sold         bool
+	Cost         int // if purchase, this is the price. If manufactured this is the varible cost + a fraction of overhead
+	Notes        string
+	TurnoverDays int // the difference in days between creation and order
+}
+
 type BillOfMaterials struct {
+	MaterialID          int
 	ProductId           int
 	Material            string
 	Supplier            string
 	UnitPrice           int
-	UnitVolume          int
+	UnitVolume          int // how mmuch material is in one unit sold by the supplier
 	Metric              string
-	Quantity            int
-	Stock               int
+	UnitsToPurchase     int // how many units of material needed to anufacture the number of products projected to be sold
+	Stock               int // total material available for manufacturing
 	VolumeForOneProduct int
-	CashAvailable       int
+	CashAvailable       int // general ledger cash account
 }
 
-type LaborAndOverheadCosts struct {
+type Overhead struct {
 	CostObject      string
-	Classification  string
 	VariableOrFixed string
 	Amount          int
 	OutputRange     string
 }
 
 type Employee struct {
-	Id           int    `json:"id"`
-	EmployeeName string `json:"employeeName"`
-	JobTitle     string `json:"jobTitle"`
-	Department   string `json:"department"`
-	StartDate    string `json:"startDate"`
-	Phone        string `json:"phone"`
-	Email        string `json:"email"`
-	Salary       int    `json:"salary"`
+	Id                    int    `json:"id"`
+	EmployeeName          string `json:"employeeName"`
+	JobTitle              string `json:"jobTitle"`
+	Department            string `json:"department"`
+	StartDate             string `json:"startDate"`
+	Phone                 string `json:"phone"`
+	Email                 string `json:"email"`
+	Salary                int    `json:"salary"`
+	WithholdingPercentage int
 }
-
+type PayPeriod struct {
+	PayPeriodId    int
+	PayPeriodStart string
+	PayPeriodEnd   string
+	PayDate        string
+	PayrollData    []Payroll
+}
+type Payroll struct {
+	EmployeeId        int
+	EmployeeName      string
+	JobsCompleted     int
+	GrossWages        int
+	WithholdingAmount int
+	BenefitDeductions int
+	NetPay            int
+}
 type Labor struct {
 	TimePeriod          string
 	NumberOfWorkers     int
@@ -176,9 +213,9 @@ type GeneralLedger struct {
 	AccountCode int
 	AccountName string
 	Ledger      struct {
-		JournalEntryID [100]int
-		CreditOrDebit  [100]string
-		Balance        [100]int
+		JournalEntryID []int
+		CreditOrDebit  []string
+		Balance        []int
 	}
 }
 type BreakevenAnalysis struct {
@@ -189,6 +226,8 @@ type BreakevenAnalysis struct {
 	BreakevenPointInSales      int
 	UnitsNeededToAchieveTarget int
 	PercentageOfSales          int
+	PercentageSignals          []int `json:"percentageOfSales"`
+	IdSignals                  []int `json:"idSignal"`
 }
 type FinancialRatios struct {
 	TimePeriod                 string
@@ -204,6 +243,17 @@ type FinancialRatios struct {
 	ReturnOnAssets             int
 	CashConversionCycle        int
 }
+
+type FixedAsset struct {
+	Id                 int
+	AssetName          int
+	StartingDate       string
+	StartingValue      int
+	DepreciationMethod string
+	AssetLifetime      string
+	CurrentValue       int
+}
+
 type JournalEntries struct {
 	Id            int
 	Date          string
@@ -221,11 +271,24 @@ type TrialBalance struct {
 	AdjustedBalance   int
 }
 
+type ProjectedUnits struct {
+	ProductId   int
+	ProductName string
+	Q1Units     int
+	Q2Units     int
+	Q3Units     int
+	Q4Units     int
+	Price       int
+	Materials   int
+	Labor       int
+	Total       int
+}
+
 // type Pagination struct {
 // 	ItemsPerPage                  int `json:"itemsPerPage"`
 // 	PageNumber                    int `json:"pageNumber"`
 // 	ItemsFetchedFromDatabaseCount int
-// }
+// } (limit*(page_num-1)+1)
 
 // type Search struct {
 // 	Query        string `json:"query"`
@@ -234,14 +297,67 @@ type TrialBalance struct {
 // 	PageNumber   int    `json:"pageNumber"`
 // }
 
+func sum(a ...int) int {
+	var sum int
+	for v := range a {
+		sum += v
+	}
+	return sum
+}
+func sumArray(a []int) int {
+	var sum int
+	for _, v := range a {
+		sum += v
+	}
+	return sum
+
+}
+
+// Takes the format yyyy-mm-dd and returns that number of
+// days that passed since
+func daysSincePastDate(date string) int {
+	t, err := time.Parse("2006-01-02", date)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	tu := t.UnixNano()
+	diff := time.Now().UnixNano() - tu
+	hr := time.Duration(diff).Hours()
+	days := int(hr / 24)
+	return days
+}
+
+func daysBetweenTwoDates(earlierDate string, laterDate string) int {
+	et, err := time.Parse("2006-01-02", earlierDate)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	lt, err := time.Parse("2006-01-02", laterDate)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	etu := et.UnixNano()
+	diff := lt.UnixNano() - etu
+	if diff < 0 {
+		log.Fatalf("Date error: %v and %v result in negative", earlierDate, laterDate)
+	}
+	hr := time.Duration(diff).Hours()
+	days := int(hr / 24)
+	return days
+}
+
+func getConfigValue(section string, key string) string {
+	config, err := ini.Load("config.ini")
+	if err != nil {
+		log.Fatal("error: ", err)
+	}
+	return config.Section(section).Key(key).String()
+}
+
 func index(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
-		config, err := ini.Load("config.ini")
-		if err != nil {
-			log.Fatal("error: ", err)
-		}
-		http.Redirect(w, r, "/"+config.Section("frontend").Key("DefaultPage").String(), http.StatusFound)
+		http.Redirect(w, r, "/"+getConfigValue("frontend", "DefaultPage"), http.StatusFound)
 	}
 }
 
@@ -253,12 +369,11 @@ func cancel(w http.ResponseWriter, r *http.Request) {
 func customers(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
-		rows, err := db.Query("SELECT * FROM customers ORDER BY id")
+		rows, err := db.Query("SELECT id, customer_name, subscriber, cohort, signup_date FROM customers WHERE archived = FALSE ORDER BY id")
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		defer rows.Close()
 		var customerRecords []Customer
 		for rows.Next() {
 			var customerFields Customer
@@ -277,12 +392,21 @@ func customers(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, rowErr.Error(), http.StatusBadRequest)
 			return
 		}
-		rows, err = db.Query("SELECT customers.id, customer_name, COALESCE(ROUND(SUM(total),2),0) AS lifetime_value, (SELECT COUNT(*) FROM orders WHERE customer_id = customers.id) AS number_of_orders, (SELECT SUM(total) - SUM(cost_of_goods_sold) FROM orders GROUP BY customer_id) AS net_profit FROM customers JOIN orders on customer_id = customers.id GROUP BY customers.id ORDER BY customers.id")
+		rows, err = db.Query(`SELECT customers.id, customer_name, COALESCE(SUM(total),0) AS lifetime_value,
+
+		(SELECT COUNT(*) FROM orders WHERE customer_id = customers.id) AS number_of_orders,
+
+		(SELECT SUM(total) - SUM(cost_of_goods_sold) FROM orders GROUP BY customer_id) AS net_profit,
+
+		(SELECT COALESCE(CURRENT_DATE() - MAX(order_date), -1) FROM orders WHERE customer_id = customers.id) AS recency,
+
+		(SELECT COALESCE(CURRENT_DATE() - MIN(order_date), -1) DIV (SELECT COUNT(*) FROM orders WHERE customer_id = customers.id) FROM orders) AS frequency
+
+		FROM customers JOIN orders on customer_id = customers.id GROUP BY customers.id ORDER BY customers.id`)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		defer rows.Close()
 		var rfm []Customer
 		for rows.Next() {
 			var rfmRecord Customer
@@ -290,6 +414,7 @@ func customers(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
 			}
+			rfmRecord.Score = rfmRecord.NetProfit / (rfmRecord.RecencyDays + rfmRecord.OrderFrequencyDays)
 			rfm = append(rfm, rfmRecord)
 		}
 		if err := rows.Err(); err != nil {
@@ -301,7 +426,7 @@ func customers(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, rowErr.Error(), http.StatusBadRequest)
 			return
 		}
-		jinja, err := gonja.FromFile("templates/customers.html")
+		template, err := gonja.FromFile("templates/customers.html")
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -310,7 +435,7 @@ func customers(w http.ResponseWriter, r *http.Request) {
 			"customerRecords": customerRecords,
 			"rfm":             rfm,
 		})
-		jinja.Execute(w, data)
+		template.Execute(w, data)
 	case "POST":
 		result, err := db.Exec("INSERT INTO customers (customer_name, subscriber, cohort, signup_date) VALUES (?, ?, ?, CURRENT_DATE())", r.FormValue("customer-name"), r.FormValue("subscriber"), r.FormValue("cohort"))
 		if err != nil {
@@ -321,9 +446,9 @@ func customers(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Printf("error: %v, %v", id, err.Error())
 		}
-		http.Redirect(w, r, "/", http.StatusFound)
+		http.Redirect(w, r, "/customers", http.StatusFound)
 	case "DELETE":
-		result, err := db.Exec("DELETE FROM customers WHERE id=?", r.FormValue("id"))
+		result, err := db.Exec("UPDATE customers SET archived = TRUE WHERE id=?", r.FormValue("id"))
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
@@ -332,8 +457,7 @@ func customers(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Printf("error: %v, %v", id, err.Error())
 		}
-		sse := datastar.NewSSE(w, r)
-		sse.Redirect("/customers")
+		datastar.NewSSE(w, r).ExecuteScript("location.reload()")
 	case "PATCH":
 		customerPatchSignals := &CustomerPatch{}
 		if err := datastar.ReadSignals(r, customerPatchSignals); err != nil {
@@ -357,7 +481,7 @@ func customers(w http.ResponseWriter, r *http.Request) {
 func editCustomer(w http.ResponseWriter, r *http.Request) {
 	var customerBeingEdited Customer
 	id := r.FormValue("id")
-	err := db.QueryRow("SELECT * FROM customers WHERE id = ?", id).Scan(&customerBeingEdited.Id, &customerBeingEdited.CustomerName, &customerBeingEdited.Subscriber, &customerBeingEdited.Cohort, &customerBeingEdited.SignupDate)
+	err := db.QueryRow("SELECT id, customer_name, subscriber, cohort, signup_date FROM customers WHERE archived = FALSE AND id = ?", id).Scan(&customerBeingEdited.Id, &customerBeingEdited.CustomerName, &customerBeingEdited.Subscriber, &customerBeingEdited.Cohort, &customerBeingEdited.SignupDate)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -452,89 +576,157 @@ func editCustomer(w http.ResponseWriter, r *http.Request) {
 	}
 */
 func products(w http.ResponseWriter, r *http.Request) {
+	rows, err := db.Query("SELECT id, product_name, description, price, minimum_order_quantity, source FROM products WHERE archived = FALSE ORDER BY id")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	defer rows.Close()
+	var productRecords []Product
+	for rows.Next() {
+		var productFields Product
+		if err := rows.Scan(&productFields.Id, &productFields.ProductName, &productFields.Description, &productFields.RetailPrice, &productFields.MinimumOrderQuantity, &productFields.Source); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		productRecords = append(productRecords, productFields)
+	}
+	if err := rows.Err(); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	err = rows.Close()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	rows, err = db.Query("SELECT * FROM inventory_costing")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+	var inventoryCosting []InventoryCosting
+	for rows.Next() {
+		var inventoryCostingRecord InventoryCosting
+		if err := rows.Scan(&inventoryCostingRecord.ProductId, &inventoryCostingRecord.TimePeriod, &inventoryCostingRecord.InventoryType, &inventoryCostingRecord.Quantity, &inventoryCostingRecord.UnitCost, &inventoryCostingRecord.Total); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		inventoryCosting = append(inventoryCosting, inventoryCostingRecord)
+	}
+
+	if err := rows.Err(); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	err = rows.Close()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	var count int
+	for i, _ := range inventoryCosting {
+		if inventoryCosting[i].InventoryType == "Purchase" {
+			count += inventoryCosting[i].Quantity
+		} else if inventoryCosting[i].InventoryType == "Cost of Goods Sold" {
+			count -= inventoryCosting[i].Quantity
+		}
+		q := count
+		inventoryCosting[i].QuantityCount = count
+		inventoryCosting[i].TotalCount = q * inventoryCosting[i].UnitCost
+	}
+	// the product stock is equal to the last quantity in IC
+	for productRecordIndex, _ := range productRecords {
+		for i := len(inventoryCosting) - 1; i >= 0; i-- {
+			if inventoryCosting[i].ProductId == productRecords[productRecordIndex].Id {
+				productRecords[productRecordIndex].Stock = inventoryCosting[i].Quantity
+			}
+		}
+	}
+	var breakEvenAnalysis []BreakevenAnalysis
+	var fixedCosts int
+	if err = db.QueryRow("SELECT SUM(amount) FROM overhead WHERE variable_or_fixed = 2").Scan(&fixedCosts); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	// for all prices, multiply by 100 to calculate everything in cents
+	const RETAIL_PRICE = 12
+	const FIXED_COSTS = 50000    // sum of costs where variableorfixed == 2
+	const UNIT_COST = 7.25       // weighted average
+	const TARGET_PROFIT = 250000 // set in ui
+	for _, v := range productRecords {
+		var breakevenAnalysisRecord BreakevenAnalysis
+		breakevenAnalysisRecord.ProductId = v.Id
+		breakevenAnalysisRecord.ContributionMarginPerUnit = (v.RetailPrice) - (UNIT_COST * 100)
+		breakevenAnalysisRecord.ContributionMarginRatio = (breakevenAnalysisRecord.ContributionMarginPerUnit * 100) / (v.RetailPrice)
+		breakevenAnalysisRecord.BreakevenPointInUnits = (FIXED_COSTS * 100) / breakevenAnalysisRecord.ContributionMarginPerUnit
+		breakevenAnalysisRecord.BreakevenPointInSales = breakevenAnalysisRecord.BreakevenPointInUnits * v.RetailPrice
+		if r.FormValue("percentage-of-sales") == "" {
+			breakevenAnalysisRecord.PercentageOfSales = 100 / len(productRecords)
+		}
+		breakevenAnalysisRecord.UnitsNeededToAchieveTarget = ((TARGET_PROFIT * 100) / (breakevenAnalysisRecord.ContributionMarginPerUnit)) / (100 / breakevenAnalysisRecord.PercentageOfSales)
+
+		breakEvenAnalysis = append(breakEvenAnalysis, breakevenAnalysisRecord)
+	}
+	var totalPercent int
+	var totalBEunits int
+	var totalUnits int
+	for _, v := range breakEvenAnalysis {
+		totalPercent += v.PercentageOfSales
+		totalBEunits += v.BreakevenPointInUnits
+		totalUnits += v.UnitsNeededToAchieveTarget
+	}
+	rows, err = db.Query("SELECT id, product_id, employee_id, location, order_id, damaged, notes, cost, sold, date_created FROM inventory LIMIT ? OFFSET 0", getConfigValue("fontend", "ItemsPerPage"))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	var inventoryRecords [100]Inventory
+	count = 0
+	for rows.Next() {
+		var inventoryFields Inventory
+		if err := rows.Scan(&inventoryFields.Id, &inventoryFields.ProductId, &inventoryFields.Location, &inventoryFields.OrderId, &inventoryFields.Damaged, &inventoryFields.Notes, &inventoryFields.Cost, &inventoryFields.Sold, &inventoryFields.DateCreated); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		inventoryFields.TurnoverDays = daysSincePastDate(inventoryFields.DateCreated)
+		inventoryRecords[count] = inventoryFields
+		if count < len(inventoryRecords) {
+			count += 1
+		}
+	}
+	if err := rows.Err(); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	err = rows.Close()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 	switch r.Method {
 	case "GET":
-		rows, err := db.Query("SELECT * FROM products ORDER BY id")
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		defer rows.Close()
-		var productRecords []Product
-		for rows.Next() {
-			var productFields Product
-			if err := rows.Scan(&productFields.Id, &productFields.ProductName, &productFields.Description, &productFields.RetailPrice, &productFields.MinimumOrderQuantity); err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-			productRecords = append(productRecords, productFields)
-		}
-		if err := rows.Err(); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		err = rows.Close()
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		rows, err = db.Query("SELECT * FROM inventory_costing")
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		defer rows.Close()
-		var inventoryCosting []InventoryCosting
-		for rows.Next() {
-			var inventoryCostingRecord InventoryCosting
-			if err := rows.Scan(&inventoryCostingRecord.ProductId, &inventoryCostingRecord.TimePeriod, &inventoryCostingRecord.InventoryType, &inventoryCostingRecord.Quantity, &inventoryCostingRecord.UnitCost, &inventoryCostingRecord.Total); err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-			inventoryCosting = append(inventoryCosting, inventoryCostingRecord)
-		}
-
-		if err := rows.Err(); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		err = rows.Close()
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		var count int
-		for i, _ := range inventoryCosting {
-			if inventoryCosting[i].InventoryType == "Purchase" {
-				count += inventoryCosting[i].Quantity
-			} else if inventoryCosting[i].InventoryType == "Cost of Goods Sold" {
-				count -= inventoryCosting[i].Quantity
-			}
-			q := count
-			inventoryCosting[i].QuantityCount = count
-			inventoryCosting[i].TotalCount = q * inventoryCosting[i].UnitCost
-		}
-		// the product stock is equal to the last quantity in IC
-		for productRecordIndex, _ := range productRecords {
-			for i := len(inventoryCosting) - 1; i >= 0; i-- {
-				if inventoryCosting[i].ProductId == productRecords[productRecordIndex].Id {
-					productRecords[productRecordIndex].Stock = inventoryCosting[i].Quantity
-				}
-			}
-		}
 		template, err := gonja.FromFile("templates/products.html")
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 		data := exec.NewContext(map[string]any{
-			"productRecords":   productRecords,
-			"inventoryCosting": inventoryCosting,
+			"productRecords":    productRecords,
+			"inventoryCosting":  inventoryCosting,
+			"breakevenAnalysis": breakEvenAnalysis,
+			"targetProfit":      TARGET_PROFIT,
+			"totalPercent":      totalPercent,
+			"totalBEunits":      totalBEunits,
+			"totalUnits":        totalUnits,
+			"inventoryRecords":  inventoryRecords[:count],
 		})
 		template.Execute(w, data)
 	case "POST":
-		if r.FormValue("form") == "product" {
-			result, err := db.Exec("INSERT INTO products (product_name, description, price, minimum_order_quantity) VALUES (?,?,?*100,?)", r.FormValue("product-name"), r.FormValue("description"), r.FormValue("price"), r.FormValue("minimum-order-quantity"))
+		switch r.FormValue("form") {
+		case "product":
+			result, err := db.Exec("INSERT INTO products (product_name, description, price, minimum_order_quantity, source) VALUES (?,?,?*100,?,?)", r.FormValue("product-name"), r.FormValue("description"), r.FormValue("price"), r.FormValue("minimum-order-quantity"), r.FormValue("source"))
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
@@ -544,7 +736,7 @@ func products(w http.ResponseWriter, r *http.Request) {
 				log.Printf("error: %v, %v", id, err.Error())
 			}
 			http.Redirect(w, r, "/products", http.StatusFound)
-		} else {
+		case "inventory-costing":
 			result, err := db.Exec("INSERT INTO inventory_costing (product_id, time_period, inventory_type, quantity, unit_cost, total) VALUES (?,?,?,?,?*100,?*?*100)",
 				r.FormValue("product"),
 				r.FormValue("time-period"),
@@ -576,6 +768,24 @@ func products(w http.ResponseWriter, r *http.Request) {
 				log.Printf("error: %v, %v", id, err.Error())
 			}
 			http.Redirect(w, r, "/products", http.StatusFound)
+		case "inventory":
+			quantity, err := strconv.ParseInt(r.FormValue("quantity"), 10, 64)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			for i := int64(0); i < quantity; i++ {
+				result, err := db.Exec("INSERT INTO inventor (product_id, location, order_id, damaged, notes, cost, sold, date_created) VALUES (?,?,?,?,?,?*100,?,?)", r.FormValue("product-id"), r.FormValue("location"), r.FormValue("order-id"), r.FormValue("damaged"), r.FormValue("notes"), r.FormValue("cost"), r.FormValue("sold"), r.FormValue("date-created"))
+				if err != nil {
+					http.Error(w, err.Error(), http.StatusBadRequest)
+					return
+				}
+				id, err := result.LastInsertId()
+				if err != nil {
+					log.Printf("error: %v, %v", id, err.Error())
+				}
+			}
+
 		}
 	case "DELETE":
 		result, err := db.Exec("DELETE FROM products WHERE id=?", r.FormValue("id"))
@@ -587,30 +797,53 @@ func products(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Printf("error: %v, %v", id, err.Error())
 		}
-		sse := datastar.NewSSE(w, r)
-		sse.Redirect("/products")
+		datastar.NewSSE(w, r).ExecuteScript("location.reload()")
 	case "PATCH":
-		productPatchSignals := &ProductPatch{}
-		if err := datastar.ReadSignals(r, productPatchSignals); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
+		switch r.FormValue("form") {
+		case "breakeven-analysis":
+			signals := &BreakevenAnalysis{}
+			if err := datastar.ReadSignals(r, signals); err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			for i, v := range breakEvenAnalysis {
+				breakEvenAnalysis[i].PercentageOfSales = signals.PercentageSignals[i]
+				breakEvenAnalysis[i].UnitsNeededToAchieveTarget = ((TARGET_PROFIT * 100) / (breakEvenAnalysis[i].ContributionMarginPerUnit)) / (100 / breakEvenAnalysis[i].PercentageOfSales)
+				sse := datastar.NewSSE(w, r)
+				err = sse.PatchElementf(`
+			    <td id="breakeven-percent-%v">%v</td>
+			    <td id="units-needed-%v>%v</td>
+			    </tr>
+			`, v.ProductId, breakEvenAnalysis[i].PercentageOfSales, v.ProductId, breakEvenAnalysis[i].UnitsNeededToAchieveTarget)
+				if err != nil {
+					http.Error(w, err.Error(), http.StatusBadRequest)
+					return
+				}
+			}
+		default:
+			productPatchSignals := &ProductPatch{}
+			if err := datastar.ReadSignals(r, productPatchSignals); err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			sse := datastar.NewSSE(w, r)
+			result, err := db.Exec("UPDATE products SET product_name=?, description=?, price=?*100, stock=?, minumum_order_quantity=? WHERE id=?", productPatchSignals.NewProductName, productPatchSignals.NewDescription, productPatchSignals.NewPrice, productPatchSignals.NewStockAtWarehouse, productPatchSignals.NewMinimumOrderQuanity, r.FormValue("id"))
+			id, err := result.LastInsertId()
+			if err != nil {
+				log.Printf("error: %v, %v", id, err.Error())
+			}
+			sse.Redirect("/products")
 		}
-		sse := datastar.NewSSE(w, r)
-		result, err := db.Exec("UPDATE products SET product_name=?, description=?, price=?*100, stock=?, minumum_order_quantity=? WHERE id=?", productPatchSignals.NewProductName, productPatchSignals.NewDescription, productPatchSignals.NewPrice, productPatchSignals.NewStockAtWarehouse, productPatchSignals.NewMinimumOrderQuanity, r.FormValue("id"))
-		id, err := result.LastInsertId()
-		if err != nil {
-			log.Printf("error: %v, %v", id, err.Error())
-		}
-		sse.Redirect("/products")
 	}
 }
 
 func editProduct(w http.ResponseWriter, r *http.Request) {
 	var productBeingEdited Product
 	id := r.FormValue("id")
-	err := db.QueryRow("SELECT * FROM products WHERE id = ?", id).Scan(&productBeingEdited.Id, &productBeingEdited.ProductName, &productBeingEdited.Description, &productBeingEdited.RetailPrice, &productBeingEdited.MinimumOrderQuantity)
+	err := db.QueryRow("SELECT id, product_name, description, price, minimum_order_quantity, source FROM products WHERE archive = FALSE AND id = ?", id).Scan(&productBeingEdited.Id, &productBeingEdited.ProductName, &productBeingEdited.Description, &productBeingEdited.Stock, &productBeingEdited.RetailPrice, &productBeingEdited.MinimumOrderQuantity, &productBeingEdited.Source)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		log.Println(err.Error())
 		return
 	}
 	sse := datastar.NewSSE(w, r)
@@ -619,13 +852,32 @@ func editProduct(w http.ResponseWriter, r *http.Request) {
   			<td>%v</td>
 	        <td><input data-bind:new-product-name name="new-product-name" value="%v" required></td>
 			<td><input data-bind:new-description name="new-description" value="%v" required></td>
-	        <td><input type="number" data-bind:stock name="new-stock" value="%v" required></td>
+	        <td>%v</td>
 	        <td><input type="number" data-bind:new-minimum-order-quantity name="new-minimum-order-quantity" value="%v" required></td>
 	        <td><input type="number" data-bind:new-price name="new-price" value="%v" required></td>
+			<td>%v</td>
          	<td><button data-on:click="@get('/cancel?resource=products')">Cancel</button></td>
 			<td><button data-on:click="@patch('/products?id=%v')">Update</button></td>
         </tr>
-		`, id, productBeingEdited.Id, productBeingEdited.ProductName, productBeingEdited.Description, productBeingEdited.Stock, productBeingEdited.MinimumOrderQuantity, productBeingEdited.RetailPrice, id))
+		`, id, productBeingEdited.Id, productBeingEdited.ProductName, productBeingEdited.Description, productBeingEdited.Stock, productBeingEdited.MinimumOrderQuantity, productBeingEdited.RetailPrice, productBeingEdited.Source, id))
+}
+
+func editBreakEvenAnalysis(w http.ResponseWriter, r *http.Request) {
+	signals := &BreakevenAnalysis{}
+	if err := datastar.ReadSignals(r, signals); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	sse := datastar.NewSSE(w, r)
+	sse.PatchElements(`
+		<td id="update-sales-percentage"><button data-on:click="@patch('/products?form=breakeven-analysis')">Update</button><br><button data-on:click="@get('/products')">Cancel</button></td>
+		<td id="breakeven-total-percent"></td>
+		`)
+	for _, v := range signals.IdSignals {
+		sse.PatchElementf(`
+			<td id="breakeven-percent-%v"><input data-bind:percentage-of-sales type="number" min="0" max="100"></td>
+   `, v)
+	}
 }
 
 /*
@@ -693,7 +945,7 @@ func editProduct(w http.ResponseWriter, r *http.Request) {
 	}
 */
 func manufacturing(w http.ResponseWriter, r *http.Request) {
-	rows, err = db.Query("SELECT * FROM bill_of_materials")
+	rows, err = db.Query("SELECT id, product_id, material, unit_volume, supplier, volume_for_one_product, metric, stock, unit_price FROM bill_of_materials ORDER BY product_id, material")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -701,7 +953,7 @@ func manufacturing(w http.ResponseWriter, r *http.Request) {
 	var bomRecords []BillOfMaterials
 	for rows.Next() {
 		var bomFields BillOfMaterials
-		if err := rows.Scan(&bomFields.Material, &bomFields.Supplier, &bomFields.UnitPrice, &bomFields.UnitVolume, &bomFields.Metric, &bomFields.VolumeForOneProduct, &bomFields.Quantity, &bomFields.Stock); err != nil {
+		if err := rows.Scan(&bomFields.MaterialID, &bomFields.ProductId, &bomFields.Material, &bomFields.UnitVolume, &bomFields.Supplier, &bomFields.VolumeForOneProduct, &bomFields.Metric, &bomFields.Stock, &bomFields.UnitPrice); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -709,16 +961,16 @@ func manufacturing(w http.ResponseWriter, r *http.Request) {
 	}
 	switch r.Method {
 	case "GET":
-		rows, err := db.Query("SELECT * FROM costs")
+		rows, err := db.Query("SELECT * FROM overhead")
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 		defer rows.Close()
-		var costRecords []LaborAndOverheadCosts
+		var costRecords []Overhead
 		for rows.Next() {
-			var costFields LaborAndOverheadCosts
-			if err := rows.Scan(&costFields.CostObject, &costFields.Classification, &costFields.VariableOrFixed, &costFields.Amount, &costFields.OutputRange); err != nil {
+			var costFields Overhead
+			if err := rows.Scan(&costFields.CostObject, &costFields.VariableOrFixed, &costFields.Amount, &costFields.OutputRange); err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
@@ -736,8 +988,54 @@ func manufacturing(w http.ResponseWriter, r *http.Request) {
 		var totalBom int
 		var totalDirectMaterials int
 		for _, v := range bomRecords {
-			totalBom += v.Quantity * v.UnitPrice
+			totalBom += v.UnitsToPurchase * v.UnitPrice
 			totalDirectMaterials += v.Stock * v.UnitPrice
+		}
+		if err := rows.Err(); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		rowErr = rows.Close()
+		if rowErr != nil {
+			http.Error(w, rowErr.Error(), http.StatusBadRequest)
+			return
+		}
+		rows, err = db.Query("SELECT id, employee_name FROM employees")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		var employeeRecords []Employee
+		for rows.Next() {
+			var employeeFields Employee
+			if err := rows.Scan(&employeeFields.Id, &employeeFields.EmployeeName); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			employeeRecords = append(employeeRecords, employeeFields)
+		}
+		if err := rows.Err(); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		rowErr = rows.Close()
+		if rowErr != nil {
+			http.Error(w, rowErr.Error(), http.StatusBadRequest)
+			return
+		}
+		rows, err = db.Query("SELECT id, product_name FROM products")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		var productRecords []Product
+		for rows.Next() {
+			var productFields Product
+			if err := rows.Scan(&productFields.Id, &productFields.ProductName); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			productRecords = append(productRecords, productFields)
 		}
 		if err := rows.Err(); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -758,12 +1056,14 @@ func manufacturing(w http.ResponseWriter, r *http.Request) {
 			"billOfMaterials":      bomRecords,
 			"totalBillOfMaterials": totalBom,
 			"totalDirectMaterials": totalDirectMaterials,
+			"employeeRecords":      employeeRecords,
+			"productRecords":       productRecords,
 		})
 		template.Execute(w, data)
 	case "POST":
 		switch r.FormValue("form") {
 		case "cost":
-			result, err := db.Exec("INSERT INTO costs (cost_object, classification, variable_or_fixed, amount, output_range) VALUES (?,?,?,?*100,?)", r.FormValue("cost-object"), r.FormValue("classification"), r.FormValue("variable-or-fixed"), r.FormValue("amount"), r.FormValue("output-range"))
+			result, err := db.Exec("INSERT INTO overhead (cost_object, variable_or_fixed, amount, output_range) VALUES (?,?,?*100,?)", r.FormValue("cost-object"), r.FormValue("variable-or-fixed"), r.FormValue("amount"), r.FormValue("output-range"))
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
@@ -771,6 +1071,7 @@ func manufacturing(w http.ResponseWriter, r *http.Request) {
 			id, err := result.LastInsertId()
 			if err != nil {
 				log.Printf("error: %v, %v", id, err.Error())
+				return
 			}
 		case "finished-goods":
 			// each materials stock needs to be reduced by the amount required to make the number of goods finished
@@ -781,17 +1082,25 @@ func manufacturing(w http.ResponseWriter, r *http.Request) {
 			// example: each purchase of a comes with 2 a's and each purchase of b comes with 2 b's, so you need 2 products to use up 1 unit purchase of a
 			// so amount required = (finished goods * VolumeForOneProduct) / UnitVolume, because (1p * 1a) / 2 = 0 purchase unit of a used, but if 2 products were made then 1 unit of a was used
 
-			// you need the vol for each material
+			// you need the volume for each material
 			var finishedGoodsRecords []BillOfMaterials
-			rows, err := db.Query("SELECT volume_for_one_product FROM bill_of_materials WHERE product_id = ?", r.FormValue("product-id"))
+			rows, err := db.Query("SELECT material, volume_for_one_product, stock FROM bill_of_materials WHERE product_id = ?", r.FormValue("product-id"))
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
 			for rows.Next() {
 				var finishedGoods BillOfMaterials
-				if err = rows.Scan(&finishedGoods.Material, &finishedGoods.VolumeForOneProduct); err != nil {
+				if err = rows.Scan(&finishedGoods.Material, &finishedGoods.VolumeForOneProduct, &finishedGoods.Stock); err != nil {
 					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+				if finishedGoods.Stock < finishedGoods.VolumeForOneProduct {
+					str := fmt.Sprintf("Not enough %v to have created the product. Check if %v stock is correct", finishedGoods.Material, finishedGoods.Material)
+					if err := datastar.NewSSE(w, r).ExecuteScript(`alert('` + str + `)`); err != nil {
+						return
+					}
+					http.Error(w, str, http.StatusInternalServerError)
 					return
 				}
 				finishedGoodsRecords = append(finishedGoodsRecords, finishedGoods)
@@ -804,6 +1113,7 @@ func manufacturing(w http.ResponseWriter, r *http.Request) {
 			if rowErr != nil {
 				http.Error(w, rowErr.Error(), http.StatusBadRequest)
 			}
+			// multiply it by number of goods finished and subtract it from stock
 			for _, v := range finishedGoodsRecords {
 				result, err := db.Exec("UPDATE bill_of_materials SET stock = stock - (?*?) / unit_volume WHERE material = ?", v.VolumeForOneProduct, r.FormValue("number-of-goods-finished"), v.Material)
 				if err != nil {
@@ -814,6 +1124,24 @@ func manufacturing(w http.ResponseWriter, r *http.Request) {
 				if err != nil {
 					log.Printf("error: %v, %v", id, err.Error())
 				}
+			}
+			// you have to get the current pay period
+			var payPeriodId int
+			err = db.QueryRow("SELECT id FROM pay_periods WHERE start < ? AND end > ?", r.FormValue("date")).Scan(&payPeriodId)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			// insert the pay_period, employee and jobs completed into payroll
+			result, err := db.Exec("INSERT INTO payroll (pay_period_id, employee_id, jobs_completed) VALUES (?,?,?)", payPeriodId, r.FormValue("employee"), r.FormValue("number-of-goods-finished"))
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			id, err := result.LastInsertId()
+			if err != nil {
+				log.Printf("error: %v, %v", id, err.Error())
+				return
 			}
 		default:
 			result, err := db.Exec("INSERT INTO bill_of_materials (material, supplier, unit_price, unit_volume, quantity) VALUES (?,?,?*100,?,?)", r.FormValue("material"), r.FormValue("supplier"), r.FormValue("unit-price"), r.FormValue("unit-volume"), r.FormValue("quantity"))
@@ -826,13 +1154,48 @@ func manufacturing(w http.ResponseWriter, r *http.Request) {
 				log.Printf("error: %v, %v", id, err.Error())
 			}
 		}
+		http.Redirect(w, r, "/manufacturing", http.StatusFound)
+	case "PATCH":
+		manufacturingSignals := &BillOfMaterials{}
+		if err := datastar.ReadSignals(r, manufacturingSignals); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		sse := datastar.NewSSE(w, r)
+		result, err := db.Exec("UPDATE bill_of_materials SET product_id=?, material=?, unit_volume=?*100, supplier=?, volume_for_one_product=? WHERE id=?", manufacturingSignals.ProductId, manufacturingSignals.Material, manufacturingSignals.UnitVolume, manufacturingSignals.Supplier, manufacturingSignals.VolumeForOneProduct, r.FormValue("id"))
+		id, err := result.LastInsertId()
+		if err != nil {
+			log.Printf("error: %v, %v", id, err.Error())
+		}
+		sse.Redirect("/manufacturing")
 	}
-	http.Redirect(w, r, "/manufacturing", http.StatusFound)
+}
+func editManufacturing(w http.ResponseWriter, r *http.Request) {
+	var materialBeingEdited BillOfMaterials
+	err := db.QueryRow("SELECT product_id, material, unit_volume, supplier, volume_for_one_product, metric, unit_price FROM bill_of_materials WHERE id=?", r.FormValue("id")).Scan(&materialBeingEdited.ProductId, &materialBeingEdited.Material, &materialBeingEdited.UnitVolume, &materialBeingEdited.Supplier, &materialBeingEdited.VolumeForOneProduct, &materialBeingEdited.Metric, &materialBeingEdited.UnitPrice)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	sse := datastar.NewSSE(w, r)
+	sse.PatchElements(fmt.Sprintf(`
+		<tr id="%v">
+			<td>%v</td>
+		    <td><input data-bind:material id="material" name="material" type="text" value="%v" required></td>
+		    <td><input data-bind:unit-volume id="unit-volume" name="unit-volume" type="number" value="%v" required></td>
+		    <td><input data-bind:supplier id="supplier" name="supplier" type="text" value="%v" required></td>
+		    <td><input data-bind:volume-for-one-product id="volume-for-one-product" name="volume-for-one-product" type="number" value="%v" required></td>
+		    <td><input data-bind:metric id="metric" name="metric" type="text" value="%v" required></td>
+			<td>%v</td>
+		    <td><input data-bind:unit-price id="unit-price" name="unit-price" type="number" step="0.01" value="%v" required></td>
+			<td><button data-on:click="location.reload()">Cancel</button><button data-on:click="@patch('/manufacturing')">Update</button></td>
+		</tr>
+		`, r.FormValue("id"), materialBeingEdited.ProductId, materialBeingEdited.Material, materialBeingEdited.UnitVolume, materialBeingEdited.Supplier, materialBeingEdited.VolumeForOneProduct, materialBeingEdited.Metric, materialBeingEdited.Stock, materialBeingEdited.UnitPrice/100))
 }
 func employees(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
-		rows, err := db.Query("SELECT * FROM employees")
+		rows, err := db.Query("SELECT id, employee_name, job_title, department, start_date, phone, company_email, salary FROM employees WHERE archived = FALSE ORDER BY id")
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
@@ -846,6 +1209,7 @@ func employees(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			employeeRecords = append(employeeRecords, employeeFields)
+
 		}
 		if err := rows.Err(); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -856,13 +1220,99 @@ func employees(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, rowErr.Error(), http.StatusBadRequest)
 			return
 		}
+		/* the pay period to display */
+		var payPeriodRecords []PayPeriod
+		rows, err = db.Query("SELECT id, start, end FROM pay_periods ORDER BY id DESC")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		for rows.Next() {
+			var payPeriodFields PayPeriod
+			if err := rows.Scan(&payPeriodFields.PayPeriodId, &payPeriodFields.PayPeriodStart, &payPeriodFields.PayPeriodEnd); err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			payPeriodRecords = append(payPeriodRecords, payPeriodFields)
+
+		}
+		rowErr = rows.Close()
+		if rowErr != nil {
+			http.Error(w, rowErr.Error(), http.StatusBadRequest)
+			return
+		}
+		if err := rows.Err(); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		var payPeriod PayPeriod
+		var payrollTotal int
+		const RATE = 2500
+		// by default get the latest pay period, else use the one from the form
+		if r.FormValue("pay-period") == "" {
+			err = db.QueryRow("SELECT * FROM pay_periods ORDER BY id DESC LIMIT 1").Scan(&payPeriod.PayPeriodId, &payPeriod.PayPeriodStart, &payPeriod.PayPeriodEnd, &payPeriod.PayDate)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+		} else {
+			err = db.QueryRow("SELECT * FROM pay_periods WHERE id = ?", r.FormValue("pay-period")).Scan(&payPeriod.PayPeriodId, &payPeriod.PayPeriodStart, &payPeriod.PayPeriodEnd, &payPeriod.PayDate)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+		}
+		/* the employees and sum of jobs completed for that pay period */
+		rows, err = db.Query(`
+			SELECT
+			    payroll.employee_id,
+			    SUM(jobs_completed),
+			    SUM(deduction_Per_pay_period),
+			    (
+			        SELECT
+			            withholding_percentage
+			        FROM
+			            employees
+			        WHERE
+			            id = payroll.employee_id
+			    ) AS withholding_percentage
+			FROM
+			    payroll
+			    JOIN payroll_deductions ON payroll.employee_id = payroll_deductions.employee_id
+			    JOIN employees ON payroll.employee_id = payroll_deductions.employee_id
+			WHERE
+			    pay_period_id = ?
+			GROUP BY
+			    payroll.employee_id`, payPeriod.PayPeriodId)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		for rows.Next() {
+			var payrollFields Payroll
+			var withholdingPercentage int
+			err := rows.Scan(&payrollFields.EmployeeId, &payrollFields.JobsCompleted, &payrollFields.BenefitDeductions, &withholdingPercentage)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			payrollFields.GrossWages = payrollFields.JobsCompleted * RATE
+			payrollFields.WithholdingAmount = payrollFields.GrossWages * withholdingPercentage / 100
+			payrollFields.NetPay = payrollFields.GrossWages - payrollFields.WithholdingAmount - payrollFields.BenefitDeductions
+			payPeriod.PayrollData = append(payPeriod.PayrollData, payrollFields)
+			payrollTotal += payrollFields.GrossWages
+		}
 		template, err := gonja.FromFile("templates/employees.html")
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		data := exec.NewContext(map[string]any{
-			"employeeRecords": employeeRecords,
+		var data *exec.Context
+		data = exec.NewContext(map[string]any{
+			"employeeRecords":    employeeRecords,
+			"displayedPayPeriod": payPeriod,
+			"payrollSum":         payrollTotal,
+			"payPeriodRecords":   payPeriodRecords,
 		})
 		template.Execute(w, data)
 	case "POST":
@@ -886,8 +1336,7 @@ func employees(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Printf("error: %v, %v", id, err.Error())
 		}
-		sse := datastar.NewSSE(w, r)
-		sse.Redirect("/employees")
+		datastar.NewSSE(w, r).ExecuteScript("location.reload()")
 	case "PATCH":
 		employeeSignalsPatch := &EmployeePatch{}
 		if err := datastar.ReadSignals(r, employeeSignalsPatch); err != nil {
@@ -895,7 +1344,7 @@ func employees(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		sse := datastar.NewSSE(w, r)
-		result, err := db.Exec("UPDATE employees SET employee_name=?, job_title=?, department=?, start_date=?, phone=?, company_email=?, salary=?*100 WHERE id=?", employeeSignalsPatch.NewEmployeeName, employeeSignalsPatch.NewJobTitle, employeeSignalsPatch.NewDepartment, employeeSignalsPatch.NewStartDate, employeeSignalsPatch.NewPhone, employeeSignalsPatch.NewEmail, employeeSignalsPatch.NewSalary, r.FormValue("id"))
+		result, err := db.Exec("UPDATE employees SET employee_name=?, job_title=?, department=?, start_date=?, phone=?, company_email=?, salary=?*100, archived=FALSE WHERE id=?", employeeSignalsPatch.NewEmployeeName, employeeSignalsPatch.NewJobTitle, employeeSignalsPatch.NewDepartment, employeeSignalsPatch.NewStartDate, employeeSignalsPatch.NewPhone, employeeSignalsPatch.NewEmail, employeeSignalsPatch.NewSalary, r.FormValue("id"))
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
@@ -912,7 +1361,7 @@ func editEmployee(w http.ResponseWriter, r *http.Request) {
 	// TODO: when table is replaced with form, currency should be formatted
 	var employeeBeingEdited Employee
 	id := r.FormValue("id")
-	err := db.QueryRow("SELECT * FROM employees WHERE id = ?", id).Scan(&employeeBeingEdited.Id, &employeeBeingEdited.EmployeeName, &employeeBeingEdited.JobTitle, &employeeBeingEdited.Department, &employeeBeingEdited.StartDate, &employeeBeingEdited.Phone, &employeeBeingEdited.Email, &employeeBeingEdited.Salary)
+	err := db.QueryRow("SELECT id, employee_name, job_title, department, start_date, phone, company_email, salary FROM employees WHERE archived = FALSE AND id = ?", id).Scan(&employeeBeingEdited.Id, &employeeBeingEdited.EmployeeName, &employeeBeingEdited.JobTitle, &employeeBeingEdited.Department, &employeeBeingEdited.StartDate, &employeeBeingEdited.Phone, &employeeBeingEdited.Email, &employeeBeingEdited.Salary)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -932,6 +1381,48 @@ func editEmployee(w http.ResponseWriter, r *http.Request) {
 			<td><button data-on:click="@patch('/employees?id=%v')">Update</button></td>
 		</tr>
 		`, id, employeeBeingEdited.Id, employeeBeingEdited.EmployeeName, employeeBeingEdited.JobTitle, employeeBeingEdited.Department, employeeBeingEdited.StartDate, employeeBeingEdited.Phone, employeeBeingEdited.Email, employeeBeingEdited.Salary/100, id))
+}
+func payrollReport(w http.ResponseWriter, r *http.Request) {
+	var payPeriod PayPeriod
+	var payrollTotal int
+	const RATE = 2500
+	err = db.QueryRow("SELECT * FROM pay_periods WHERE id = ?", r.FormValue("id")).Scan(&payPeriod.PayPeriodId, &payPeriod.PayPeriodStart, &payPeriod.PayPeriodEnd, &payPeriod.PayDate)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	rows, err = db.Query(`
+			SELECT employee_id, SUM(jobs_completed), SUM(deduction_amount), witholding_percentage FROM payroll
+			JOIN payroll_deductions ON payroll.employee_id = payroll_deductions.employee_id
+			JOIN employees ON payroll.employee_id = payroll_deductions.employee_id WHERE pay_period_id = ? GROUP BY employee_id`, payPeriod.PayPeriodId)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	for rows.Next() {
+		var payrollFields Payroll
+		var withholdingPercentage int
+		if err := rows.Scan(&payrollFields.EmployeeId, &payrollFields.JobsCompleted, &payrollFields.BenefitDeductions, &withholdingPercentage); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		payrollFields.GrossWages = payrollFields.JobsCompleted * RATE
+		payrollFields.WithholdingAmount = payrollFields.GrossWages * withholdingPercentage / 100
+		payrollFields.NetPay = payrollFields.GrossWages - payrollFields.WithholdingAmount - payrollFields.BenefitDeductions
+		payPeriod.PayrollData = append(payPeriod.PayrollData, payrollFields)
+		payrollTotal += payrollFields.GrossWages
+	}
+	template, err := gonja.FromFile("templates/pay-period.html")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	var data *exec.Context
+	data = exec.NewContext(map[string]any{
+		"payPeriod":  payPeriod,
+		"payrollSum": payrollTotal,
+	})
+	template.Execute(w, data)
 }
 
 /*
@@ -1099,8 +1590,10 @@ func orders(w http.ResponseWriter, r *http.Request) {
 		})
 		template.Execute(w, data)
 	case "POST":
-		var productPrice int
+		// get the first undamaged product that the customer ordered
 		pid := r.FormValue("product-id")
+		var productPrice int
+
 		db.QueryRow("SELECT price FROM products WHERE id = ?", pid).Scan(&productPrice)
 		// calculate weighted average cost of goods sold
 		rows, err = db.Query("SELECT unit_cost, quantity, SUM(quantity) AS weights FROM inventory_costing WHERE product_id=? AND inventory_type=1 GROUP BY unit_cost, quantity", pid)
@@ -1142,7 +1635,7 @@ func orders(w http.ResponseWriter, r *http.Request) {
 			sumCostTimesQuantity += v.CostTimesQuantity
 		}
 		var weightedAverage int
-		weightedAverage = int(float32(sumCostTimesQuantity) / float32(len(weights)))
+		weightedAverage = sumCostTimesQuantity / len(weights)
 		// insert order
 		result, err := db.Exec("INSERT INTO orders (customer_id, product_id, quantity, total, progress, order_date, cost_of_goods_sold) VALUES (?,?,?,?*?, ?, CURRENT_DATE(), ?*?)",
 			r.FormValue("customer-id"),
@@ -1159,6 +1652,21 @@ func orders(w http.ResponseWriter, r *http.Request) {
 		id, err := result.LastInsertId()
 		if err != nil {
 			log.Printf("error: %v, %v", id, err.Error())
+			return
+		}
+		// the id and date created for the item assigned to the order
+		var item Inventory
+		err = db.QueryRow("SELECT id, date_created FROM inventory WHERE damage = FALSE AND sold = FALSE ORDER BY date_created").Scan(&item.Id, &item.DateCreated)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		item.TurnoverDays = daysSincePastDate(item.DateCreated)
+		// the max id should be the order that was just made
+		result, err = db.Exec("UPDATE inventory SET order_id = (SELECT MAX(id) FROM orders), sold = TRUE, turnover = ? WHERE id = ?", item.Id, item.TurnoverDays)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
 		}
 		// record orders in journal entry; credit inventory/debit COGS, and then credit sales and debit cash/AR
 		result, err = db.Exec("INSERT INTO journal_entries (entry_date, debit_account, credit_account, debit, credit, notes) VALUES (CURRENT_DATE(),?,?,?*?,?*?,?),(CURRENT_DATE(),?,?,?*?,?*?,?)",
@@ -1170,8 +1678,8 @@ func orders(w http.ResponseWriter, r *http.Request) {
 			// inventory & cogs
 			1104,
 			2401,
-			r.FormValue("quantity"), weightedAverage,
-			r.FormValue("quantity"), weightedAverage,
+			r.FormValue("quantity"), item.Cost,
+			r.FormValue("quantity"), item.Cost,
 			"decrease inventory from sale",
 		)
 		if err != nil {
@@ -1251,7 +1759,7 @@ func orders(w http.ResponseWriter, r *http.Request) {
 		sse := datastar.NewSSE(w, r)
 		sse.Redirect("/orders")
 	case "PATCH":
-		// todo: might reove the ability to edit orders since that would affect many other parts of the program
+		// todo: might remove the ability to edit orders since that would affect many other parts of the program
 		orderPatchSignals := &OrderPatch{}
 		if err := datastar.ReadSignals(r, orderPatchSignals); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -1554,7 +2062,9 @@ func reviews(w http.ResponseWriter, r *http.Request) {
 			`, signals.NewOrderId, signals.NewRating, signals.NewReview, signals.OrderId))
 	}
 */
+
 func finances(w http.ResponseWriter, r *http.Request) {
+	/* chart of accounts */
 	var chartOfAccountsRecords []ChartOfAccounts
 	accountMap := make(map[string]int)
 	accountCodeMap := make(map[int]string)
@@ -1583,7 +2093,7 @@ func finances(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, rowErr.Error(), http.StatusInternalServerError)
 		return
 	}
-
+	/* journal entries */
 	var journalEntryRecords []JournalEntries
 	rows, err = db.Query("SELECT * FROM journal_entries ORDER BY entry_date")
 	if err != nil {
@@ -1614,23 +2124,23 @@ func finances(w http.ResponseWriter, r *http.Request) {
 		timePeriod = fmt.Sprintf("%v to %v", journalEntryRecords[0].Date, journalEntryRecords[len(journalEntryRecords)-1].Date)
 	}
 	// there is a credit and a debit that need to go to their respective accounts on the ledger
-	var generalLedger [20]GeneralLedger
-	count := 0
+	var generalLedger []GeneralLedger
+	var generalLedgerRecord GeneralLedger
 	for _, v := range chartOfAccountsRecords {
-		generalLedger[count].AccountName = v.AccountName
-		generalLedger[count].AccountCode = v.AccountCode
+		generalLedgerRecord.AccountName = v.AccountName
+		generalLedgerRecord.AccountCode = v.AccountCode
 		for i, _ := range journalEntryRecords {
-			if generalLedger[count].AccountCode == journalEntryRecords[i].DebitAccount {
-				generalLedger[count].Ledger.JournalEntryID[i] = journalEntryRecords[i].Id
-				generalLedger[count].Ledger.CreditOrDebit[i] = "Debit"
-				generalLedger[count].Ledger.Balance[i] = journalEntryRecords[i].Debit
-			} else if generalLedger[count].AccountCode == journalEntryRecords[i].CreditAccount {
-				generalLedger[count].Ledger.JournalEntryID[i] = journalEntryRecords[i].Id
-				generalLedger[count].Ledger.CreditOrDebit[i] = "Credit"
-				generalLedger[count].Ledger.Balance[i] = journalEntryRecords[i].Credit
+			if generalLedgerRecord.AccountCode == journalEntryRecords[i].DebitAccount {
+				generalLedgerRecord.Ledger.JournalEntryID = append(generalLedgerRecord.Ledger.JournalEntryID, journalEntryRecords[i].Id)
+				generalLedgerRecord.Ledger.CreditOrDebit = append(generalLedgerRecord.Ledger.CreditOrDebit, "Debit")
+				generalLedgerRecord.Ledger.Balance = append(generalLedgerRecord.Ledger.Balance, journalEntryRecords[i].Debit)
+			} else if generalLedgerRecord.AccountCode == journalEntryRecords[i].CreditAccount {
+				generalLedgerRecord.Ledger.JournalEntryID = append(generalLedgerRecord.Ledger.JournalEntryID, journalEntryRecords[i].Id)
+				generalLedgerRecord.Ledger.CreditOrDebit = append(generalLedgerRecord.Ledger.CreditOrDebit, "Credit")
+				generalLedgerRecord.Ledger.Balance = append(generalLedgerRecord.Ledger.Balance, journalEntryRecords[i].Credit)
 			}
 		}
-		count += 1
+		generalLedger = append(generalLedger, generalLedgerRecord)
 	}
 	ledgerIndex := r.FormValue("ledger-index")
 	if ledgerIndex == "" {
@@ -1705,7 +2215,33 @@ func finances(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		incomeStatement.NetIncome = incomeStatement.TotalSales - (incomeStatement.CostOfGoodsSold + incomeStatement.PromotionExpenses + incomeStatement.SellingAndGeneralAdministrativeExpenses + incomeStatement.DepreciationAndAmoritization)
-
+		// fixed assets
+		rows, err := db.Query("SELECT id, asset_name, starting_date, starting_value, depreciation_method, asset_lifetime FROM fixed_assets WHERE archived = FALSE ORDER BY id")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		var fixedAssetRecords []FixedAsset
+		for rows.Next() {
+			var fixedAssetFields FixedAsset
+			if err := rows.Scan(&fixedAssetFields.Id, &fixedAssetFields.AssetName, &fixedAssetFields.StartingDate, &fixedAssetFields.StartingValue, &fixedAssetFields.DepreciationMethod, &fixedAssetFields.AssetLifetime, &fixedAssetFields.CurrentValue); err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			// for example the start is 1 jan, and the lifetime is 1 year, and current tie is 6 months since, then 6/12 = 0.5, 0.5 * starting value = current value
+			days := daysSincePastDate(fixedAssetFields.StartingDate)
+			fixedAssetFields.CurrentValue = ((days * 100) / daysBetweenTwoDates(fixedAssetFields.StartingDate, fixedAssetFields.AssetLifetime)) * fixedAssetFields.StartingValue
+			fixedAssetRecords = append(fixedAssetRecords, fixedAssetFields)
+		}
+		if err := rows.Err(); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		rowErr := rows.Close()
+		if rowErr != nil {
+			http.Error(w, rowErr.Error(), http.StatusBadRequest)
+			return
+		}
 		//operating cash flow
 		cashFlowStatement := &CashFlowStatements{}
 		cashFlowStatement.TimePeriod = timePeriod
@@ -1719,38 +2255,23 @@ func finances(w http.ResponseWriter, r *http.Request) {
 		cashFlowStatement.OperatingCashFlow = (incomeStatement.NetIncome + incomeStatement.DepreciationAndAmoritization) - cashFlowStatement.CashSpentOnAssets
 
 		// sum of all cash expenses
-		cashFlowStatement.OperatingExpenses = incomeStatement.CostOfGoodsSold + incomeStatement.SellingAndGeneralAdministrativeExpenses + incomeStatement.PromotionExpenses - incomeStatement.DepreciationAndAmoritization
+		cashFlowStatement.OperatingExpenses = incomeStatement.CostOfGoodsSold + incomeStatement.SellingAndGeneralAdministrativeExpenses + incomeStatement.PromotionExpenses
 
 		financialRatios := &FinancialRatios{}
 		financialRatios.TimePeriod = timePeriod
 		// sum of balance sheet accounts where acc type == assets over sum of balance sheet accounts where acc type == liability
-		financialRatios.CurrentRatio = ((balanceSheet.Cash + balanceSheet.Inventory + balanceSheet.AccountsReceivable + balanceSheet.PrepaidExpenses) * 100) / max(1, (balanceSheet.AccountsPayable+balanceSheet.AccruedExpenses+balanceSheet.UnearnedRevenue+balanceSheet.LongTermDebt))
-		// cash and a/r over sum bal sheet where acc type == liability
-		financialRatios.AcidTestRatio = ((balanceSheet.Cash + balanceSheet.AccountsReceivable) * 100) / max(1, (balanceSheet.AccountsPayable+balanceSheet.AccruedExpenses+balanceSheet.UnearnedRevenue+balanceSheet.LongTermDebt))
+		if balanceSheet.AccountsPayable+balanceSheet.AccruedExpenses+balanceSheet.UnearnedRevenue+balanceSheet.LongTermDebt != 0 {
+			financialRatios.CurrentRatio = ((balanceSheet.Cash + balanceSheet.Inventory + balanceSheet.AccountsReceivable + balanceSheet.PrepaidExpenses) * 100) / (balanceSheet.AccountsPayable + balanceSheet.AccruedExpenses + balanceSheet.UnearnedRevenue + balanceSheet.LongTermDebt)
+		}
 
-		financialRatios.GrossProfitPercentage = (incomeStatement.NetIncome * 100) / incomeStatement.TotalSales
+		// cash and a/r over sum balance sheet where account type == liability
+		if balanceSheet.AccountsPayable+balanceSheet.AccruedExpenses+balanceSheet.UnearnedRevenue+balanceSheet.LongTermDebt != 0 {
+			financialRatios.AcidTestRatio = ((balanceSheet.Cash + balanceSheet.AccountsReceivable) * 100) / (balanceSheet.AccountsPayable + balanceSheet.AccruedExpenses + balanceSheet.UnearnedRevenue + balanceSheet.LongTermDebt)
+		}
 
-		var breakEvenAnalysis [2]BreakevenAnalysis
-		// for all prices, multiply by 100 to calculate everything in cents
-		const RETAIL_PRICE = 20
-		const FIXED_COSTS = 50000    // sum of costs where variableorfixed == 2
-		const UNIT_COST = 7.25       // weighted average
-		const TARGET_PROFIT = 250000 // set in ui
-		breakEvenAnalysis[0].ProductId = 4
-		breakEvenAnalysis[0].ContributionMarginPerUnit = (RETAIL_PRICE * 100) - (UNIT_COST * 100)
-		breakEvenAnalysis[0].ContributionMarginRatio = (breakEvenAnalysis[0].ContributionMarginPerUnit * 100) / (RETAIL_PRICE * 100)
-		breakEvenAnalysis[0].BreakevenPointInUnits = (FIXED_COSTS * 100) / breakEvenAnalysis[0].ContributionMarginPerUnit
-		breakEvenAnalysis[0].BreakevenPointInSales = breakEvenAnalysis[0].BreakevenPointInUnits * (RETAIL_PRICE * 100)
-		breakEvenAnalysis[0].PercentageOfSales = 25
-		breakEvenAnalysis[0].UnitsNeededToAchieveTarget = ((TARGET_PROFIT * 100) / (breakEvenAnalysis[0].ContributionMarginPerUnit)) / (100 / breakEvenAnalysis[0].PercentageOfSales)
-
-		breakEvenAnalysis[1].ProductId = 5
-		breakEvenAnalysis[1].ContributionMarginPerUnit = ((RETAIL_PRICE + 10) * 100) - ((UNIT_COST * 2) * 100)
-		breakEvenAnalysis[1].ContributionMarginRatio = (breakEvenAnalysis[1].ContributionMarginPerUnit * 100) / ((RETAIL_PRICE + 10) * 100)
-		breakEvenAnalysis[1].BreakevenPointInUnits = (FIXED_COSTS * 100) / (breakEvenAnalysis[1].ContributionMarginPerUnit)
-		breakEvenAnalysis[1].BreakevenPointInSales = breakEvenAnalysis[1].BreakevenPointInUnits * ((RETAIL_PRICE + 10) * 100)
-		breakEvenAnalysis[1].PercentageOfSales = 75
-		breakEvenAnalysis[1].UnitsNeededToAchieveTarget = ((TARGET_PROFIT * 100) / (breakEvenAnalysis[1].ContributionMarginPerUnit)) * 100 / breakEvenAnalysis[1].PercentageOfSales
+		if incomeStatement.TotalSales != 0 {
+			financialRatios.GrossProfitPercentage = (incomeStatement.NetIncome * 100) / incomeStatement.TotalSales
+		}
 
 		data := exec.NewContext(map[string]interface{}{
 			"journalEntries":    journalEntryRecords,
@@ -1763,46 +2284,45 @@ func finances(w http.ResponseWriter, r *http.Request) {
 			"financialRatios":   financialRatios,
 			"accountMap":        accountMap,
 			"displayedLedger":   displayedLedger,
-			"breakevenAnalysis": breakEvenAnalysis,
-			"targetProfit":      TARGET_PROFIT,
+			"fixedAssetRecords": fixedAssetRecords,
 		})
 		switch r.FormValue("statement") {
 		case "income":
-			jinja, err := gonja.FromFile("templates/income-statement-template.html")
+			template, err := gonja.FromFile("templates/income-statement-template.html")
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
-			jinja.Execute(w, data)
+			template.Execute(w, data)
 		case "balance":
-			jinja, err := gonja.FromFile("templates/balance-sheet-template.html")
+			template, err := gonja.FromFile("templates/balance-sheet-template.html")
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
-			jinja.Execute(w, data)
+			template.Execute(w, data)
 		case "cash":
-			jinja, err := gonja.FromFile("templates/cash-flow-statement-template.html")
+			template, err := gonja.FromFile("templates/cash-flow-statement-template.html")
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
-			jinja.Execute(w, data)
+			template.Execute(w, data)
 		case "ledger":
-			jinja, err := gonja.FromFile("templates/general-ledger-template.html")
+			template, err := gonja.FromFile("templates/general-ledger-template.html")
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
-			jinja.Execute(w, data)
+			template.Execute(w, data)
 		default:
-			jinja, err := gonja.FromFile("templates/finances.html")
+			template, err := gonja.FromFile("templates/finances.html")
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				log.Println(err.Error())
 				return
 			}
-			err = jinja.Execute(w, data)
+			err = template.Execute(w, data)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				log.Println(err.Error())
@@ -1810,7 +2330,32 @@ func finances(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	case "POST":
-		result, err := db.Exec("INSERT INTO journal_entries (entry_date, debit_account, credit_account, debit, credit, notes) VALUES (?, ?, ?, ?*100, ?*100, ?)", r.FormValue("date"), r.FormValue("debit-account"), r.FormValue("credit-account"), r.FormValue("debit"), r.FormValue("credit"), r.FormValue("notes"))
+		switch r.FormValue("form") {
+		case "add-chart-of-accounts":
+			result, err := db.Exec("INSERT INTO chart_of_accounts (account_code, account_name, account_type, financial_statement) VALUES (CONCAT(?,?,?), ?, ?, ?)", r.FormValue("statement"), r.FormValue("category"), len(chartOfAccountsRecords)+1, r.FormValue("account-name"), r.FormValue("category"), r.FormValue("statement"))
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			id, err := result.LastInsertId()
+			if err != nil {
+				log.Printf("error: %v, %v", id, err.Error())
+			}
+			http.Redirect(w, r, "/finances", http.StatusFound)
+		default:
+			result, err := db.Exec("INSERT INTO journal_entries (entry_date, debit_account, credit_account, debit, credit, notes) VALUES (?, ?, ?, ?*100, ?*100, ?)", r.FormValue("date"), r.FormValue("debit-account"), r.FormValue("credit-account"), r.FormValue("debit"), r.FormValue("credit"), r.FormValue("notes"))
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			id, err := result.LastInsertId()
+			if err != nil {
+				log.Printf("error: %v, %v", id, err.Error())
+			}
+			http.Redirect(w, r, "/finances", http.StatusFound)
+		}
+	case "PATCH":
+		result, err := db.Exec("UPDATE chart_of_accounts SET account_name=? WHERE account_code=?", r.FormValue("account-name"), r.FormValue("account-code"))
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
@@ -1819,52 +2364,105 @@ func finances(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Printf("error: %v, %v", id, err.Error())
 		}
-		http.Redirect(w, r, "/finances", http.StatusFound)
+		datastar.NewSSE(w, r).ExecuteScript("location.reload()")
 	}
 }
-
-func changeLedger(w http.ResponseWriter, r *http.Request) {
+func editFinances(w http.ResponseWriter, r *http.Request) {
+	var accountBeingEdited ChartOfAccounts
+	code := r.FormValue("account-code")
+	if err := db.QueryRow("SELECT account_type, account_name, financial_statement FROM chart_of_accounts WHERE account_code = ?", code).Scan(&accountBeingEdited.AccountType, &accountBeingEdited.AccountName, &accountBeingEdited.FinancialStatement); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 	sse := datastar.NewSSE(w, r)
-	sse.Redirectf("/finances?display-ledger=%v", r.FormValue("ledger-index"))
+	sse.PatchElements(fmt.Sprintf(`
+		<td id="%v-name"><form><input id="account-name" name="account-name" type="text" value=%v required><button data-on:click="@patch('/finances?account-code=%v', {contentType: 'form'})">Confirm</button></form><button data-on:click="location.reload()">Cancel</button></td></td>
+		`, code, accountBeingEdited.AccountName, code))
 }
 
-func images(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, "templates/pictures/customers.png")
-}
+// func changeLedger(w http.ResponseWriter, r *http.Request) {
+// 	sse := datastar.NewSSE(w, r)
+// 	sse.Redirectf("/finances?display-ledger=%v", r.FormValue("ledger-index"))
+// }
 
 func masterBudget(w http.ResponseWriter, r *http.Request) {
+	const NUMBER_OF_PERIODS = 4 // quarters, might also add option for monthly
+	const PROMOTION_PERCENTAGE = 15
+	const COLLECTIONS_PERCENTAGE = 80
+	const PAYMENTS_PERCENTAGE = 80
+	const BEGINNING_CASH_BALANCE = 100000
+	const BEGINNING_INVENTORY = 100 // for each product
 	switch r.Method {
 	case "GET":
-		var projectedUnits []int
-		var projectedSales [4]int
-		var price int
-		err := db.QueryRow("SELECT q1_units, q2_units, q3_units, q4_units,  (SELECT price FROM products WHERE id = product_id) AS projected_sales FROM master_budget").Scan(&projectedSales[0], &projectedSales[1], &projectedSales[2], &projectedSales[3], &price)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		for i, v := range projectedSales {
-			projectedUnits = append(projectedUnits, v)
-			projectedSales[i] = v * price
+		var projectedUnits []ProjectedUnits
+		var projectedSales [][NUMBER_OF_PERIODS]int
+		rows, err := db.Query(`
+			SELECT product_id,q1_units,q2_units,q3_units,q4_units,
+
+			(SELECT product_name FROM products WHERE id=product_id) AS product_name,
+
+			(SELECT price FROM products WHERE id=product_id) AS price,
+
+			(SELECT COALESCE(SUM((unit_price DIV unit_volume)*volume_for_one_product))FROM bill_of_materials WHERE product_id=product_id) AS material_cost_sum,
+
+			(SELECT cost_per_job FROM labor WHERE product_id=product_id LIMIT 1) AS labor_cost_sum
+
+			FROM master_budget
+			`)
+		var projectedUnitsTotal int
+		for rows.Next() {
+			var projectedUnitsRecord ProjectedUnits
+			if err := rows.Scan(&projectedUnitsRecord.ProductId, &projectedUnitsRecord.Q1Units, &projectedUnitsRecord.Q2Units, &projectedUnitsRecord.Q3Units, &projectedUnitsRecord.Q4Units, &projectedUnitsRecord.ProductName, &projectedUnitsRecord.Price, &projectedUnitsRecord.Materials, &projectedUnitsRecord.Labor); err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			projectedUnitsRecord.Total = sum(projectedUnitsRecord.Q1Units, projectedUnitsRecord.Q2Units, projectedUnitsRecord.Q3Units, projectedUnitsRecord.Q4Units)
+			projectedUnitsTotal += projectedUnitsRecord.Total
+			projectedUnits = append(projectedUnits, projectedUnitsRecord)
 		}
 		var projectedSalesTotal int
-		for _, v := range projectedSales {
-			projectedSalesTotal += v
+		var periodTotalSales [NUMBER_OF_PERIODS]int
+		for i, v := range projectedUnits {
+			projectedSales = append(projectedSales, [NUMBER_OF_PERIODS]int{v.Q1Units * v.Price, v.Q2Units * v.Price, v.Q3Units * v.Price, v.Q4Units * v.Price})
+			periodTotalSales[i] = sum(v.Q1Units*v.Price, v.Q2Units*v.Price, v.Q3Units*v.Price, v.Q4Units*v.Price)
+			projectedSalesTotal += periodTotalSales[i]
+
 		}
-		/* materials */
-		var directMaterials []int
-		rows, err = db.Query("SELECT SUM((unit_price DIV unit_volume) * volume_for_one_product) FROM bill_of_materials GROUP BY product_id")
+		/* materials: for each product, you need the sum of the cost
+		of materials, and the sum of cost of labor, and multiply that by the number of units projected to be sold */
+
+		/* multiply direct material cost by projected units  */
+		var directMaterials [][NUMBER_OF_PERIODS]int
+		var directMaterialsTotal int
+		for _, v := range projectedUnits {
+			directMaterials = append(projectedSales, [NUMBER_OF_PERIODS]int{v.Q1Units * v.Materials, v.Q2Units * v.Materials, v.Q3Units * v.Materials, v.Q4Units * v.Materials})
+			directMaterialsTotal += sum(v.Q1Units*v.Materials, v.Q2Units*v.Materials, v.Q3Units*v.Materials, v.Q4Units*v.Materials)
+		}
+
+		/* labor: multiply each quarter's projected units sold by cost per job */
+		var directLabor [][NUMBER_OF_PERIODS]int
+		var directLaborTotal int
+		for _, v := range projectedUnits {
+			directLabor = append(projectedSales, [NUMBER_OF_PERIODS]int{v.Q1Units * v.Labor, v.Q2Units * v.Labor, v.Q3Units * v.Labor, v.Q4Units * v.Labor})
+			directLaborTotal += sum(v.Q1Units*v.Labor, v.Q2Units*v.Labor, v.Q3Units*v.Labor, v.Q4Units*v.Labor)
+		}
+		// overhead
+		var overhead [NUMBER_OF_PERIODS]int
+		var overheadRecord int
+		rows, err = db.Query("SELECT SUM(amount) FROM overhead")
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 		for rows.Next() {
-			var directMaterialsRecord int
-			if err := rows.Scan(&directMaterialsRecord); err != nil {
+			if err := rows.Scan(&overheadRecord); err != nil {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
 			}
-			directMaterials = append(directMaterials, directMaterialsRecord)
+		}
+		// yearly overhead divided into the number of periods
+		for i, _ := range overhead {
+			overhead[i] = overheadRecord / NUMBER_OF_PERIODS
 		}
 		if err := rows.Err(); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -1875,95 +2473,23 @@ func masterBudget(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, rowErr.Error(), http.StatusBadRequest)
 			return
 		}
-		directMaterials[0] = directMaterials[0] * projectedSales[0]
-		var directMaterialsTotal int
-		for _, v := range directMaterials {
-			directMaterialsTotal += v
-		}
-		/* labor */
-		var directLabor []int
-		rows, err = db.Query("SELECT cost_per_job FROM labor")
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		for rows.Next() {
-			var directLaborRecord int
-			if err := rows.Scan(&directLaborRecord); err != nil {
-				http.Error(w, err.Error(), http.StatusBadRequest)
-				return
-			}
-			directLabor = append(directLabor, directLaborRecord)
-		}
-		if err := rows.Err(); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		rowErr = rows.Close()
-		if rowErr != nil {
-			http.Error(w, rowErr.Error(), http.StatusBadRequest)
-			return
-		}
-		var directLaborTotal int
-		for _, v := range directLabor {
-			directLaborTotal += v
-		}
-		// overhead
-		var overhead []int
-		rows, err = db.Query("SELECT SUM(amount) FROM overhead")
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		for rows.Next() {
-			var overheadRecord int
-			if err := rows.Scan(&overheadRecord); err != nil {
-				http.Error(w, err.Error(), http.StatusBadRequest)
-				return
-			}
-			overhead = append(overhead, overheadRecord/4) // yearly overhead divided into four quarters
-		}
-		if err := rows.Err(); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		rowErr = rows.Close()
-		if rowErr != nil {
-			http.Error(w, rowErr.Error(), http.StatusBadRequest)
-			return
-		}
-		var overheadTotal int
-		for _, v := range overhead {
-			overheadTotal += v
-		}
-		/* production totals */
-		var productionTotals []int
-		for i, v := range directMaterials {
-			productionTotals = append(productionTotals, v+directLabor[i]+overhead[i])
-		}
-		productionTotalsTotal := directLaborTotal + directMaterialsTotal + overheadTotal
+
 		/* purchases */
-		var purchasedGoods []int
-		for i := 0; i < 4; i++ {
-			purchasedGoods = append(purchasedGoods, 0)
-		}
-		var purchasedGoodsTotal int
-		for _, v := range purchasedGoods {
-			purchasedGoodsTotal += v
-		}
-		// TODO
-		var costOfgoodsManufactured []int
-		for i := 0; i < 4; i++ {
-			costOfgoodsManufactured = append(costOfgoodsManufactured, 0)
-		}
-		var costOfGoodsSoldTotals []int
-		for i, v := range productionTotals {
-			costOfGoodsSoldTotals = append(costOfGoodsSoldTotals, v+purchasedGoods[i])
-		}
+
+		/* estimation of cost of purchasing inventory */
+		var purchasedGoods [NUMBER_OF_PERIODS]int
+
+		// you don't know when the products were manufactured, so you need to know how much you have at start and end of each time period.
+		//
+		// if you have starting inventory already, that is going to lower anufacturing costs, since you need to produce less to reach number of projected units
+		//
+		// right now the program calculates all projected units as manufactured in the same time period
+		var costOfgoodsManufactured [NUMBER_OF_PERIODS]int
+
 		/* salaries */
-		var salaries []int
+		var salaries [NUMBER_OF_PERIODS]int
 		var salariesTotal int
-		err = db.QueryRow("SELECT SUM(salary) FROM employees").Scan(&salariesTotal)
+		err = db.QueryRow("SELECT SUM(salary) FROM employees WHERE archived = FALSE").Scan(&salariesTotal)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
@@ -1973,39 +2499,103 @@ func masterBudget(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, rowErr.Error(), http.StatusBadRequest)
 			return
 		}
-		for i := 0; i < 4; i++ {
-			salaries = append(salaries, salariesTotal/4)
+		for i, _ := range salaries {
+			salaries[i] = salariesTotal / NUMBER_OF_PERIODS
 		}
-		var promotion []int
+		/* promotion */
+		var promotion [][NUMBER_OF_PERIODS]int
 		for _, v := range projectedSales {
-			promotion = append(promotion, v*15/100)
+			promotion = append(promotion, [NUMBER_OF_PERIODS]int{v[0] * PROMOTION_PERCENTAGE / 100, v[1] * PROMOTION_PERCENTAGE / 100, v[2] * PROMOTION_PERCENTAGE / 100, v[3] * PROMOTION_PERCENTAGE / 100})
 		}
-		var promotionTotal int
-		for _, v := range promotion {
-			promotionTotal += v
-		}
-		var sellingAndGeneralAdministrativeTotal []int
-		for _, v := range promotion {
-			sellingAndGeneralAdministrativeTotal = append(sellingAndGeneralAdministrativeTotal, v+(salariesTotal/4))
-		}
-		var EBITDA []int
-		for i, v := range projectedSales {
-			EBITDA = append(EBITDA, v-productionTotals[0]-costOfGoodsSoldTotals[0]-sellingAndGeneralAdministrativeTotal[i])
-		}
-		var EBITDA_Total int
-		for _, v := range EBITDA {
-			EBITDA_Total += v
+		/* selling and general administrative */
+		var sellingAndGeneralAdministrativeQuarterTotals [NUMBER_OF_PERIODS]int
+		for i, _ := range sellingAndGeneralAdministrativeQuarterTotals {
+			sellingAndGeneralAdministrativeQuarterTotals[i] = salaries[i]
 		}
 		// separate page for fixed assets
-		var depreciationAndAmoritization []int
-		for i := 0; i < 4; i++ {
-			depreciationAndAmoritization = append(depreciationAndAmoritization, 0)
+		var depreciationAndAmoritization [NUMBER_OF_PERIODS]int
+
+		/* borrowings is the total long term debt during the quarter */
+		var borrowings [NUMBER_OF_PERIODS]int
+		quarters := [][]string{{"2026-01-01", "2026-04-30"}, {"2026-05-01", "2026-06-30"}, {"2026-07-01", "2026-09-30"}, {"2026-10-01", "2026-12-31"}}
+		for v := range NUMBER_OF_PERIODS {
+			if err := db.QueryRow("SELECT COALESCE(SUM(credit), 0) FROM journal_entries WHERE credit_account=1202 AND entry_date BETWEEN ? AND ?", quarters[v][0], quarters[v][1]).Scan(&borrowings[v]); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+		}
+		var repaymentsIncludingInterest [NUMBER_OF_PERIODS]int
+		for v := range NUMBER_OF_PERIODS {
+			if err := db.QueryRow("SELECT COALESCE(SUM(debit), 0) FROM journal_entries WHERE debit_account=1202 AND entry_date BETWEEN ? AND ?", quarters[v][0], quarters[v][1]).Scan(&repaymentsIncludingInterest[v]); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				log.Println(err.Error())
+				return
+			}
 		}
 
+		/* budget line item totals */
+
+		var productionQuarterTotals []int
+		/* cost of goods sold */
+		var purchasedGoodsTotal int
+		var costOfgoodsManufacturedTotals int
+		var costOfGoodsSoldQuarterTotals []int
+		/* selling and general admin */
+		var promotionTotal int
+		/* income statement */
+		var netProfitQuarterTotals []int
+		var netProfitTotal int
+		var EBITDA []int
+		var EBITDA_Total int
+		var depreciationAndAmoritizationTotal int
 		var netIncome []int
-		for i, v := range EBITDA {
-			netIncome = append(netIncome, v-depreciationAndAmoritization[i])
-		}
+		var netIncomeTotal int
+		/* cash budget */
+		var cashBalance []int
+		var collections []int
+		var collectionsTotal int
+		var payments []int
+		var paymentsTotal int
+		var excessOrDeficiencyOfCash []int
+		var borrowingsTotal int
+		var repaymentsIncludingInterestTotal int
+		var endingCashBalance []int
+		// 		for i := range NUMBER_OF_PERIODS { // each product
+		// 			productionQuarterTotals = append(productionQuarterTotals, sumArray(directMaterials[i][:])+sumArray(directLabor[i][:])+overhead[i])
+		//
+		// 			purchasedGoodsTotal += purchasedGoods[i]
+		// 			costOfgoodsManufacturedTotals += costOfgoodsManufactured[i]
+		// 			costOfGoodsSoldQuarterTotals = append(costOfGoodsSoldQuarterTotals, costOfgoodsManufactured[i]+purchasedGoods[i])
+		//
+		// 			promotionTotal += sumArray(promotion[i][:])
+		//
+		// 			netProfitQuarterTotals = append(netProfitQuarterTotals, periodTotalSales[i]-costOfgoodsManufactured[i]-costOfGoodsSoldQuarterTotals[i])
+		// 			netProfitTotal += netProfitQuarterTotals[i]
+		// 			EBITDA = append(EBITDA, netProfitQuarterTotals[i]-sellingAndGeneralAdministrativeQuarterTotals[i])
+		// 			EBITDA_Total += EBITDA[i]
+		// 			depreciationAndAmoritizationTotal += depreciationAndAmoritization[i]
+		// 			netIncome = append(netIncome, EBITDA[i]-depreciationAndAmoritization[i])
+		// 			netIncomeTotal += netIncome[i]
+		//
+		// 			if i > 0 {
+		// 				cashBalance = append(cashBalance, periodTotalSales[i]+endingCashBalance[i-1])
+		// 			} else {
+		// 				cashBalance = append(cashBalance, BEGINNING_CASH_BALANCE)
+		// 			}
+		// 			collections = append(collections, periodTotalSales[i]*COLLECTIONS_PERCENTAGE/100)
+		// 			collectionsTotal += collections[i]
+		// 			payments = append(collections, periodTotalSales[i]*PAYMENTS_PERCENTAGE/100)
+		// 			paymentsTotal += payments[i]
+		// 			excessOrDeficiencyOfCash = append(excessOrDeficiencyOfCash, (cashBalance[i]+collections[i])-payments[i])
+		// 			borrowingsTotal += borrowings[i]
+		// 			repaymentsIncludingInterestTotal += repaymentsIncludingInterest[i]
+		// 			endingCashBalance = append(endingCashBalance, cashBalance[i]+excessOrDeficiencyOfCash[i]+borrowings[i]-repaymentsIncludingInterest[i])
+		// 		}
+		/* category totals */
+		productionTotal := directLaborTotal + directMaterialsTotal + overheadRecord
+		costOfGoodsSoldTotal := purchasedGoodsTotal + costOfgoodsManufacturedTotals
+		sellingAndGeneralAdministrativeTotal := promotionTotal + salariesTotal
+
 		template, err := gonja.FromFile("templates/master-budget.html")
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -2013,28 +2603,48 @@ func masterBudget(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		data := exec.NewContext(map[string]interface{}{
-			"projectedSales":                       projectedSales,
-			"projectedUnits":                       projectedUnits,
-			"projectedSalesTotal":                  projectedSalesTotal,
-			"directMaterials":                      directMaterials,
-			"directMaterialsTotal":                 directMaterialsTotal,
-			"directLabor":                          directLabor,
-			"directLaborTotal":                     directLaborTotal,
-			"overhead":                             overhead,
-			"overheadTotal":                        overheadTotal,
-			"productionTotals":                     productionTotals,
-			"productionTotalsTotal":                productionTotalsTotal,
-			"purchasedGoods":                       purchasedGoods,
-			"costOfGoodsSoldTotals":                costOfGoodsSoldTotals,
-			"salaries":                             salaries,
-			"salariesTotal":                        salariesTotal,
-			"promotion":                            promotion,
-			"promotionTotal":                       promotionTotal,
-			"sellingAndGeneralAdministrativeTotal": sellingAndGeneralAdministrativeTotal,
-			"depreciationAndAmoritization":         depreciationAndAmoritization,
-			"netIncome":                            netIncome,
-			"EBITDA":                               EBITDA,
-			"EBITDA_Total":                         EBITDA_Total,
+			"projectedSales":               projectedSales,
+			"projectedUnits":               projectedUnits,
+			"projectedUnitsTotal":          projectedUnitsTotal,
+			"projectedSalesTotal":          projectedSalesTotal,
+			"directMaterials":              directMaterials,
+			"directMaterialsTotal":         directMaterialsTotal,
+			"directLabor":                  directLabor,
+			"directLaborTotal":             directLaborTotal,
+			"overhead":                     overhead,
+			"overheadTotal":                overheadRecord,
+			"productionQuarterTotals":      productionQuarterTotals,
+			"productionTotalsTotal":        productionTotal,
+			"costOfgoodsManufactured":      costOfgoodsManufactured,
+			"purchasedGoods":               purchasedGoods,
+			"purchasedGoodsTotal":          purchasedGoodsTotal,
+			"costOfGoodsSoldQuarterTotals": costOfGoodsSoldQuarterTotals,
+			"costOfGoodsSoldTotal":         costOfGoodsSoldTotal,
+			"netProfitQuarterTotals":       netProfitQuarterTotals,
+			"netProfitTotal":               netProfitTotal,
+			"salaries":                     salaries,
+			"salariesTotal":                salariesTotal,
+			"promotion":                    promotion,
+			"promotionTotal":               promotionTotal,
+			"sellingAndGeneralAdministrativeQuarterTotals": sellingAndGeneralAdministrativeQuarterTotals,
+			"sellingAndGeneralAdministrativeTotal":         sellingAndGeneralAdministrativeTotal,
+			"depreciationAndAmoritization":                 depreciationAndAmoritization,
+			"depreciationAndAmoritizationTotal":            depreciationAndAmoritizationTotal,
+			"netIncome":                                    netIncome,
+			"netIncomeTotal":                               netIncomeTotal,
+			"EBITDA":                                       EBITDA,
+			"EBITDA_Total":                                 EBITDA_Total,
+			"cashBalance":                                  cashBalance,
+			"collections":                                  collections,
+			"collectionsTotal":                             collectionsTotal,
+			"payments":                                     payments,
+			"paymentsTotal":                                paymentsTotal,
+			"excessOrDeficiencyOfCash":                     excessOrDeficiencyOfCash,
+			"borrowings":                                   borrowings,
+			"borrowingsTotal":                              borrowingsTotal,
+			"repaymentsIncludingInterest":                  repaymentsIncludingInterest,
+			"repaymentsIncludingInterestTotal":             repaymentsIncludingInterestTotal,
+			"endingCashBalance":                            endingCashBalance,
 		})
 		err = template.Execute(w, data)
 		if err != nil {
@@ -2042,6 +2652,46 @@ func masterBudget(w http.ResponseWriter, r *http.Request) {
 			log.Println(err.Error())
 			return
 		}
+	}
+}
+
+func settings(w http.ResponseWriter, r *http.Request) {
+	config, err := ini.Load("config.ini")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Println(err.Error())
+		return
+	}
+	switch r.Method {
+	case "GET":
+		template, err := gonja.FromFile("templates/settings.html")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			log.Println(err.Error())
+			return
+		}
+		data := exec.NewContext(map[string]interface{}{
+			"User":        config.Section("database").Key("User").String(),
+			"Passwd":      config.Section("database").Key("Passwd").String(),
+			"Net":         config.Section("database").Key("Net").String(),
+			"Addr":        config.Section("database").Key("Addr").String(),
+			"DBName":      config.Section("database").Key("DBName").String(),
+			"DefaultPage": config.Section("frontend").Key("customers").String(),
+		})
+		err = template.Execute(w, data)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			log.Println(err.Error())
+			return
+		}
+	case "POST":
+		config.Section("database").Key("User").SetValue(r.FormValue("User"))
+		config.Section("database").Key("Passwd").SetValue(r.FormValue("Passwd"))
+		config.Section("database").Key("Net").SetValue(r.FormValue("Net"))
+		config.Section("database").Key("Addr").SetValue(r.FormValue("Addr"))
+		config.Section("database").Key("DBName ").SetValue(r.FormValue("DBName"))
+		config.Section("frontend").Key("customers").SetValue(r.FormValue("DefaultPage"))
+		http.Redirect(w, r, "/settings", http.StatusFound)
 	}
 }
 
@@ -2079,27 +2729,31 @@ func main() {
 
 	http.HandleFunc("/products", products)
 	//	http.HandleFunc("/products/search", searchProducts)
-	http.HandleFunc("/products/edit", editProduct)
+	http.HandleFunc("/products/edit/{id}", editProduct)
+	http.HandleFunc("/edit-breakeven-analysis", editBreakEvenAnalysis)
 
 	http.HandleFunc("/orders", orders)
 	//	http.HandleFunc("/orders/search", searchOrders)
 	http.HandleFunc("/orders/edit", editOrder)
 
 	http.HandleFunc("/manufacturing", manufacturing)
+	http.HandleFunc("/manufacturing/edit", editManufacturing)
 
 	http.HandleFunc("/employees", employees)
 	//	http.HandleFunc("/employees/search", searchEmployees)
 	http.HandleFunc("/employees/edit", editEmployee)
+	http.HandleFunc("/employees/payroll-report", payrollReport)
 
 	http.HandleFunc("/reviews", reviews)
 	//	http.HandleFunc("/reviews/search", searchReviews)
 	//  http.HandleFunc("/reviews/edit", editReview)
 
 	http.HandleFunc("/finances", finances)
-	http.HandleFunc("/finances/change-ledger", changeLedger)
+	//http.HandleFunc("/finances/change-ledger", changeLedger)
+	http.HandleFunc("/finances/edit", editFinances)
 
-	http.HandleFunc("/images", images)
 	http.HandleFunc("/master-budget", masterBudget)
+	http.HandleFunc("/settings", settings)
 
 	log.Printf("Visit http://%v for the program", port)
 	log.Fatal(http.ListenAndServe(port, nil))

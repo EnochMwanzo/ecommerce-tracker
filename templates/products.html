@@ -11,24 +11,26 @@
       <th>Stock</th>
       <th>Minimum Order Quantity</th>
       <th>Retail Price</th>
+      <th>Source</th>
       <th></th>
       <th></th>
     </tr>
   </thead>
   <tbody>
     {% for i in productRecords %}
-    <tr id="{{i.Id}}" data-signals="{row{{i.Id}}: {'id': {{i.Id}}, 'productName': '{{i.ProductName}}', 'description': '{{i.Description}}', 'stock': {{i.Stock}}, 'minimumOrderQuanity': {{i.MinimumOrderQuantity}}, 'price': {{i.RetailPrice}} } }">
+    <tr id="{{i.Id}}" data-signals="{row{{i.Id}}: {'id': {{i.Id}}, 'productName': '{{i.ProductName}}', 'description': '{{i.Description}}', 'stock': {{i.Stock}}, 'minimumOrderQuanity': {{i.MinimumOrderQuantity}}, 'price': {{i.RetailPrice}}, 'source': '{{i.Source}}' } }">
       <td data-text="$row{{i.Id}}.id"></td>
       <td data-text="$row{{i.Id}}.productName"></td>
       <td data-text="$row{{i.Id}}.description"></td>
       <td data-text="$row{{i.Id}}.stock"></td>
       <td data-text="$row{{i.Id}}.minimumOrderQuanity"></td>
+      <td data-text="$row{{i.Id}}.source"></td>
       <td class="currency">{{i.RetailPrice}}</td>
       <td>
         <button
           data-on:click="confirm('Are you sure?') && @delete('/products?id={{i.Id}}')"
         >
-          Delete
+          Archive
         </button>
       </td>
       <td>
@@ -96,6 +98,69 @@
   {% endfor %}
 </tbody>
 </table>
+<h2>Inventory</h2>
+<table>
+  <thead>
+    <th>Inventory ID</th>
+    <th>Product ID</th>
+    <th data-on:click="alert('The employee who made the product if manufactured, else 0 if it was purchased.')">Employee ID</th>
+    <th data-on:click="alert('Manufacture or purchase date.')">Date Created</th>
+    <th data-on:click="alert('the order that the item was assigned to, 0 if no order yet')">Order ID</th>
+    <th>Location</th>
+    <th>Damaged</th>
+    <th>Sold</th>
+    <th data-on:click="alert('For purchased products, this is the price.\nFor manufactured products this is the varible cost + a fracttion of overhead')">Cost</th>
+    <th data-on:click="alert('The difference in days between creation and order date.')">Turnover Days</th>
+    <th>Notes</th>
+  </thead>
+  <tbody>
+    {% for i in inventoryRecords %}
+    <tr>
+    <td>{{i.Id}}</td>
+    <td>{{i.ProductId}}</td>
+    <td>{{i.EmployeeId}}</td>
+    <td>{{i.DateCreated}}</td>
+    <td>{{i.OrderId}}</td>
+    <td>{{i.Location}}</td>
+    <td>{{i.Damaged}}</td>
+    <td>{{i.Sold}}</td>
+    <td>{{i.Cost}}</td>
+    <td>{{i.TurnoverDays}}</td>
+    <td>{{i.Notes}}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<hr>
+<h2>breakeven analysis and target profit ({{targetProfit}})</h2>
+<button data-on:click="@get('/edit-breakeven-analysis')">Edit Percentages</button>
+<table>
+  <thead>
+    <th>Product</th>
+    <th>Contribution Margin Ratio</th>
+    <th>Percentage of Sales</th>
+    <th>Breakeven Point</th>
+    <th>Units Needed to Achieve Target</th>
+  </thead>
+  <tbody>
+    {% for i in breakevenAnalysis %}
+    <tr data-signals:percentage-of-sales="[]">
+    <td data-bindidSignal="{{i.ProductId}}">{{i.ProductId}} {{i.Name}}</td>
+    <td class="percent">{{i.ContributionMarginRatio}}</td>
+    <td data-bind:percentage-of-sales id="breakeven-percent-{{i.ProductId}}">{{i.PercentageOfSales}}</td>
+    <td>{{i.BreakevenPointInUnits}}</td>
+    <td id="units-needed-{{i.ProductId}}">{{i.UnitsNeededToAchieveTarget}}</td>
+    </tr>
+    {% endfor %}
+    <tr>
+      <td>Total</td>
+      <td id="update-sales-percentage"></td>
+      <td id="breakeven-total-percent">{{totalPercent}}</td>
+      <td>{{totalBEunits}}</td>
+      <td>{{totalUnits}}</td>
+    </tr>
+  </tbody>
+</table>
 <h2>Add a Product</h2>
 <form method="POST" action="/products?form=product">
 <div class="add-record-form">
@@ -103,19 +168,24 @@
     <label for="product-name">Product name</label><br>
     <label for="description">Product description</label><br>
     <label for="price">Retail Price</label><br>
-    <label for="minimum-order-quanity">Minimum Order Quantity</label>
+    <label for="minimum-order-quanity">Minimum Order Quantity</label><br>
+    <label for="source">Source</label>
   </div>
   <div class="add-record-form-input">
     <input id="product-name" type="text" name="product-name" required /><br>
     <input id="description" type="text" name="description" required /><br>
     <input id="price" type="number" name="price" step="0.01" required /><br>
-    <input id="minimum-order-quanity" type="number" name="minimum-order-quantity" required />
+    <input id="minimum-order-quanity" type="number" name="minimum-order-quantity" required /><br>
+    <select id="source" name="source">
+      <option value="1">Manufactured</option>
+      <option value="2">Purchased</option>
+    </select><br>
   </div>
 </div>
 <input type="submit" value="Submit" />
 </form>
 <h2>Purchase Inventory</h2>
-<form method="POST" action="/products">
+<form method="POST" action="/products?form=inventory-costing">
   <div class="add-record-form">
     <div class="add-record-form-label">
       <label for="product">Product</label><br>
@@ -132,6 +202,35 @@
       <input id="time-period" type="date" name="time-period" required /><br>
       <input id="quantity" type="number" name="quantity" required /><br>
       <input id="unit-cost" type="number" name="unit-cost" step="0.01" required />
+    </div>
+  </div>
+  <input type="submit" value="Submit" />
+</form>
+<h2>Inventory</h2>
+<form method="POST" action="/products?form=inventory">
+  <div class="add-record-form">
+    <div class="add-record-form-label">
+      <label for="product">Product</label><br>
+      <label for="location">Location</label><br>
+      <label for="cost">Cost</label><br>
+      <label for="date-created">Date Created</label><br>
+      <label for="notes">Notes</label>
+    </div>
+    <div class="add-record-form-input">
+      <select id="product" name="product">
+        {% for i in productRecords %}
+        <option value="{{ i.Id }}">{{ i.Id }} - {{ i.ProductName }}</option>
+        {% endfor %}
+      </select><br>
+      <select id="location" name="location">
+        <option value="warehouse">Warehouse</option>
+        <option value="manufacturing facility">manufacturing facility</option>
+        <option value="order delivery">order delivery</option>
+      </select><br>
+      <input id="quantity" type="number" name="quantity" required /><br>
+      <input id="cost" type="number" name="cost" step="0.01" required /><br>
+      <input id="date-created" type="date" name="date-created" required /><br>
+      <input id="notes" type="text" name="notes" required />
     </div>
   </div>
   <input type="submit" value="Submit" />

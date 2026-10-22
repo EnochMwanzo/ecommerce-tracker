@@ -30,6 +30,15 @@
             }
           });
         }
+        function sumPercents() {
+          var sum = 0
+          var num = document.querySelectorAll(".input-percent");
+          num.forEach(i => {
+            sum += parseInt(i.innerText)
+            }
+          )
+          document.querySelector("#breakeven-total-percent").innerText = sum
+          };
         window.addEventListener('load', formatCurrency)
         window.addEventListener('load', formatPercent)
         </script>
@@ -129,6 +138,7 @@
 
         .add-record-form {
             display: table;
+            align-items: center;
             margin: 0 auto;
             padding: 1em;
         }
@@ -171,6 +181,7 @@
                 <a href="/finances"><li class="navbar-item">Finances</li></a>
                 <a href="/manufacturing"><li class="navbar-item">Manufacturing</li></a>
                 <a href="/master-budget"><li class="navbar-item">Master Budget</li></a>
+                <a href="/settings"><li class="navbar-item">Settings</li></a>
                 <!--<li class="navbar-item"><a href="#">Creators</a></li>-->
             </ul>
         </nav>
@@ -178,7 +189,8 @@
         <div class="wrapper">
         <main>
         <h1>{% block resource %}{% endblock %}</h1>
-            {% block content %}{% endblock %}
+        <p><i>Click on table headings to get column descriptions</i></p>
+        {% block content %}{% endblock %}
         </main>
         <footer>
           <a href="https://github.com/EnochMwanzo/ecommerce-tracker/">Ecommerce Tracker</a>
