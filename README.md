@@ -248,14 +248,14 @@ Overhead costs can be added to the tale by entering the cost object, amount, out
 The master budget uses a projected number of units sold to estimate how money will be spent across different parts of the company throughout the year. The budgeted balance sheet and income statement are the same as ones on the fiancias page.
 
 * Projected Units Sold: The expected number of units of each product to sell.
-* Projected Sales: The projected units sold multiplied by the retail price of each product.
+* Projected Sales: The projected un-its sold multiplied by the retail price of each product.
 * Direct Materials: The value of the materials needed to manufacture each products.
 * Direct Labor: The value of the labor needed to manufacture each product.
 * Overhead: For variable overhead, it is the varible cost multiplied by the units sold. For fixed costs, they are equally divided among quarters.
-* Manufactured Goods: The cost of goods manufactured for the quarter.
-* Purchased Goods: The cost of goods that were purchased.
+* Manufactured Goods: The cost of goods manufactured for the quarter for each product that is manufactured.
+* Purchased Goods: The cost of goods that were purchased for each product that is purchased.
 * Salaries: The sum of the yearly salaries from employees divided among each quarter.
-* Promotion: The dollar value expected to be spent on promotion. It is a percentage of sales.
+* Promotion: The dollar value expected to be spent on the promotion of each product. It is a percentage of sales.
 #### Cash budget
 * Beginning Cash Balance: The amount of cash in the cash account at the beginning of each quarter.
 * Collections from Customers: Collections are the percentage of revenue that will be collected from customers during the quarter.
